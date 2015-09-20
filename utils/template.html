@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head></head>
+<body>
+    <p>Hello, {{ name }}, here's your schedule for tomorrow:</p>
+    {% for table in tables %}
+        <table border="1">
+            <thead>
+                <tr>
+                    <th align="center" colspan="10">{{ table.session }}</th>
+                </tr>
+                <tr>
+                    {% for header in table.headers %}
+                        <th align="center">{{ header }}</th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    {% for data in table.data %}
+                        <td align="center">{{ data }}</td>
+                    {% endfor %}
+                </tr>
+            </tbody>
+        </table>
+        <br>
+    {% endfor %}
+</body>
+</html>
