@@ -23,10 +23,6 @@ class Node(object):
     def __repr__(self):
         return repr(self.value)
 
-    def __str__(self):
-        return '{value} => [{adjacent}]'.format(value=self.value,
-                                                  adjacent=', '.join([str(node.value) for node in self.adjacent_nodes]))
-
     def __eq__(self, other):
         if not isinstance(other, Node):
             return False
@@ -43,7 +39,12 @@ class PriorityQueue(object):
         self.element_to_priority = sortedcontainers.SortedDict()
 
     def put(self, element, priority):
-        # Assuming a lower priority is better
+        '''
+        Puts an element into the priority queue
+        :param element: The element to insert. Can be anything.
+        :param priority: The priority, as a number. Lowered is assumed to be better / higher priority.
+        :return:
+        '''
         if (element in self.element_to_priority) and (priority > self.element_to_priority[element]):
             return
 
@@ -54,14 +55,25 @@ class PriorityQueue(object):
 
         self.priority_to_elements[priority].append(element)
 
-    def get(self):
-        min_key = self.priority_to_elements.keys()[0]
-        min_priority = self.priority_to_elements[min_key]
+    def get(self, min=True):
+        '''
+        Removes and returns the element with the lowest priority score (by default).
+        :param min: True if should return the object with the lowest priority score. False if should return the highest.
+        :return: The most extremely prioritized object, base on whether the parameter min is True or False
+        '''
+        keys = self.priority_to_elements.keys()
+        if min:
+            key = keys[0]
 
-        element = min_priority.pop()
+        else:
+            key = keys[len(keys)]
 
-        if not min_priority:
-            del self.priority_to_elements[min_key]
+        priority = self.priority_to_elements[key]
+
+        element = priority.pop()
+
+        if not priority:
+            del self.priority_to_elements[key]
 
         return element
 
