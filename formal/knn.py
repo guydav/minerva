@@ -36,7 +36,7 @@ def cache(ignore_order=False):
 
         def cached_function(*args, **kwargs):
             key = ''
-            # Doing some tricks here to ignore ordering
+            # sorting to ignore ordering, using strings to easily support the kwargs as well
             if args:
                 if ignore_order:
                     key += CACHE_KEY_SEPARATOR.join([str(arg) for arg in sorted(args)])
@@ -44,7 +44,6 @@ def cache(ignore_order=False):
                 else:
                     key += CACHE_KEY_SEPARATOR.join([str(arg) for arg in args])
 
-            # Doing some tricks here to ignore ordering
             if kwargs:
                 if ignore_order:
                     key += CACHE_KEY_SEPARATOR.join(

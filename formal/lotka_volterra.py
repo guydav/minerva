@@ -31,7 +31,27 @@ def generate_predator_rate_function(c, d):
     return predator_rate_function
 
 
-def eulers_method(rates, initial_values, time_values, time_step, min_values=(0, 0)):
+def generate_lorenz_system_equations(sigma, rho, beta):
+    '''
+    Generate a set of Lorenz System equations
+    :param sigma:
+    :param rho:
+    :param beta:
+    :return:
+    '''
+    def dx_dt(x, y, z, t):
+        return sigma * (y - x)
+
+    def dy_dt(x, y, z, t):
+        return x * (rho - z) - y
+
+    def dz_dt(x, y, z, t):
+        return x * y - beta * z
+
+    return (dx_dt, dy_dt, dz_dt)
+
+
+def eulers_method(rates, initial_values, time_values, time_step, min_values=None):
     """
     Estimate a set of differential equations using Euler's method of linear estimation
     :param rates: An iterable with functions representing the rates of change of the different variable. Each function
@@ -53,7 +73,12 @@ def eulers_method(rates, initial_values, time_values, time_step, min_values=(0, 
         rates_of_change = [rate_func(*params) for rate_func in rates]
 
         for i in xrange(len(values)):
-            next_value = max(previous_values[i] + time_step * rates_of_change[i], min_values[i])
+            next_value = previous_values[i] + time_step * rates_of_change[i]
+
+            if min_values:
+                next_value = max(next_value, min_values[i])
+
+
             values[i].append(next_value)
             previous_values[i] = next_value
 
@@ -64,7 +89,7 @@ def eulers_method_lotka_volterra(initial_prey, initial_predator, a, b, c, d, t_m
     """
     Simulates the Lotka-Volterra equations using Euler's Method, and graphs the result
     :param initial_prey: The initial prey population (x_0)
-    :param initial_predator: The inigial predator population (y_0)
+    :param initial_predator: The initial predator population (y_0)
     :param a: Alpha, the prey population growth parameter, > 0
     :param b: Beta, the prey-predator interaction prey death parameter, > 0
     :param c: Gamma, the predator population death parameter, > 0
@@ -79,14 +104,36 @@ def eulers_method_lotka_volterra(initial_prey, initial_predator, a, b, c, d, t_m
     time_values = [t * t_step for t in range(0, int(t_max / t_step))]
 
     prey_values, predator_values = \
-        eulers_method((prey_rate, pred_rate), (initial_prey, initial_predator), time_values, t_step)
+        eulers_method((prey_rate, pred_rate), (initial_prey, initial_predator), time_values, t_step, min_values=(0, 0))
 
     figure, axes = plot.subplots()
 
     axes.plot(time_values, prey_values, label='Prey Population', color='green')
     axes.plot(time_values, predator_values, label='Predator Population', color='red')
+
     axes.set_xlabel('Time')
     axes.set_ylabel('Population Sizes')
+    axes.legend(loc='best')
+    axes.grid(True)
+
+    plot.show()
+
+
+def eulers_method_lorenz_system(x0, y0, z0, rho, sigma, beta, t_max, t_step):
+    equations = generate_lorenz_system_equations(rho, sigma, beta)
+    time_values = [t * t_step for t in range(0, int(t_max / t_step))]
+
+    x, y, z = eulers_method(equations, (x0, y0, z0), time_values, t_step)
+
+    figure = plot.figure()
+    axes = figure.add_subplot(111, projection='3d')
+
+    axes.plot(x, y, z,  label='Lorenz System', color='blue')
+
+    axes.set_xlabel('Convective Intensity')
+    axes.set_ylabel('Asc/Desc Temperature Difference')
+    axes.set_zlabel('Difference in Vertical Temperature Profile')
+
     axes.legend(loc='best')
     axes.grid(True)
 
@@ -103,8 +150,12 @@ DELTA = 0.03
 TIME_MAX = 100
 TIME_STEP = 0.01
 
+
 def main():
-    eulers_method_lotka_volterra(INITIAL_PREY, INITIAL_PREDATOR, ALPHA, BETA, GAMMA, DELTA, TIME_MAX, TIME_STEP)
+    # eulers_method_lotka_volterra(INITIAL_PREY, INITIAL_PREDATOR, ALPHA, BETA, GAMMA, DELTA, TIME_MAX, TIME_STEP)
+    # eulers_method_lotka_volterra(90, 30, 8, 0.27, 7, 0.13, 10, 0.01)
+    # eulers_method_lotka_volterra(100, 50, 0.5, 0.002, 0.4, 0.004, 100, 0.01)
+    eulers_method_lorenz_system(1, 1, 1, 28, 10, float(8)/3, 1000, 1)
 
 
 if __name__ == '__main__':
