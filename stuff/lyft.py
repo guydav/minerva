@@ -1,7 +1,10 @@
+"""
+Note - i used TODO's to mark places where I would improve upon this solution for more generality or better behavior
+"""
 CACHE_KEY_SEPARATOR = '|'
 CACHE = {}
 
-INVLAID_ARGUMENTS = -1
+INVALID_ARGUMENTS = -1
 
 # -- Caching Wrapper -- #
 
@@ -79,7 +82,7 @@ def shortest_detour(a, b, c, d):
     """
     if a == b or c == d:
         # Asking about a passenger being picked up and dropped off at the same place makes no sense
-        return INVLAID_ARGUMENTS, None
+        return INVALID_ARGUMENTS, None
 
 
     # TODO: If I were going to make this more generic, I would generate the options dynamically rather than hardcoding
@@ -144,3 +147,7 @@ def distance(start, finish):
     """
     # TODO: Optimally, this would be a better measure of distance, such as a Google Maps estimate
     return ((start[0] - finish[0]) ** 2 + (start[1] - finish[1]) ** 2) ** 0.5
+
+
+if __name__ == '__main__':
+    print shortest_detour((0,0), (1,1), (2,2), (3,3))

@@ -1,27 +1,26 @@
 import sortedcontainers
 
+
 CACHE_KEY_SEPARATOR = '|'
 CACHE = {}
 
 
-
 class PriorityQueue(object):
     def __init__(self):
-        '''
+        """
         A simple priority queue implementation, using two sorted dictionaries.
         :return:
-        '''
+        """
         self.priority_to_elements = sortedcontainers.SortedDict()
         self.element_to_priority = sortedcontainers.SortedDict()
 
-
     def put(self, element, priority):
-        '''
+        """
         Puts an element into the priority queue
         :param element: The element to insert. Can be anything.
         :param priority: The priority, as a number. Lowered is assumed to be better / higher priority.
         :return:
-        '''
+        """
         if (element in self.element_to_priority) and (priority > self.element_to_priority[element]):
             return
 
@@ -32,11 +31,10 @@ class PriorityQueue(object):
 
         self.priority_to_elements[priority].append(element)
 
-
-    def get_extreme_key(self, min=True):
+    def get_extreme_key(self, get_min=True):
         keys = self.priority_to_elements.keys()
 
-        if min:
+        if get_min:
             key = keys[0]
 
         else:
@@ -44,32 +42,34 @@ class PriorityQueue(object):
 
         return key
 
-
-    def get_extreme_priority(self, min=True):
-        key = self.get_extreme_key(min)
+    def get_extreme_priority(self, get_min=True):
+        key = self.get_extreme_key(get_min)
         return self.priority_to_elements[key]
 
-
-    def get(self, min=True):
-        '''
+    def get(self, get_min=True, with_priority=False):
+        """
         Removes and returns the element with the lowest priority score (by default).
-        :param min: True if should return the object with the lowest priority score. False if should return the highest.
+        :param get_min: True if should return the object with the lowest priority score.
+        False if should return the highest.
+        :param with_priority: Should I return the priority as well as the value?
         :return: The most extremely prioritized object, base on whether the parameter min is True or False
-        '''
-        key = self.get_extreme_key(min)
-        priority =  self.priority_to_elements[key]
+        """
+        key = self.get_extreme_key(get_min)
+        priority = self.priority_to_elements[key]
 
         element = priority.pop()
 
         if not priority:
             del self.priority_to_elements[key]
 
-        return element
+        if with_priority:
+            return element, key
 
+        else:
+            return element
 
-    def get_many(self, count, min=True):
-        return [self.get(min) for i in xrange(count)]
-
+    def get_many(self, count, get_min=True, with_priority=False):
+        return [self.get(get_min, with_priority) for _ in xrange(count)]
 
     def __len__(self):
         return len(self.priority_to_elements)
@@ -108,7 +108,6 @@ def cache(ignore_order=False):
                 else:
                     key += CACHE_KEY_SEPARATOR.join(
                         ['{name}:{value}'.format(name=name, value=kwargs[name]) for name in kwargs.keys()])
-
 
             if key in function_cache:
                 return function_cache[key]

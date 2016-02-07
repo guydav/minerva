@@ -4,13 +4,13 @@ from utils import *
 
 
 SERVE_WIN_PROBABILITY = 0.6
-RETURN_WIN_PROBABILITY = 0.5
+OPPONENT_WIN_PROBABILITY = 0.5
 PLAY_TO = 21
 START_SERVE = True
 NUM_TRIALS = 10000
 
 
-def single_game(p_serve=SERVE_WIN_PROBABILITY, p_return=RETURN_WIN_PROBABILITY, play_to=PLAY_TO,
+def single_game(p_serve=SERVE_WIN_PROBABILITY, p_opponent=OPPONENT_WIN_PROBABILITY, play_to=PLAY_TO,
                 start_serve=START_SERVE):
     my_score = 0
     opponent_score = 0
@@ -19,13 +19,18 @@ def single_game(p_serve=SERVE_WIN_PROBABILITY, p_return=RETURN_WIN_PROBABILITY, 
     while my_score < play_to and opponent_score < play_to:
         point = random.random()
 
-        if (current_serve and point < p_serve) or (not current_serve and point < p_return):
-            my_score += 1
-            current_serve = True
+        if current_serve:
+            if point < p_serve:
+                my_score += 1
 
+            else:
+                current_serve = False
         else:
-            opponent_score += 1
-            current_serve = False
+            if point < p_opponent:
+                opponent_score += 1
+
+            else:
+                current_serve = True
 
     return int(my_score == play_to)
 
@@ -40,7 +45,7 @@ def run_simulation():
     print 'The simulated winning percentage is {p:.3}%'.format(p=float(my_total)*100/NUM_TRIALS)
 
 
-def build_table(p_win=SERVE_WIN_PROBABILITY, p_loss=RETURN_WIN_PROBABILITY, play_to=PLAY_TO,
+def build_table(p_win=SERVE_WIN_PROBABILITY, p_loss=OPPONENT_WIN_PROBABILITY, play_to=PLAY_TO,
                 start_serve=START_SERVE):
 
     result = []
@@ -144,6 +149,7 @@ def print_table():
 
 
 def main():
+    run_simulation()
     print_table()
 
 
