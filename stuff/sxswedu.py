@@ -5,6 +5,8 @@ from formal.utils import PriorityQueue
 import gensim
 from sklearn import cluster, metrics
 from scipy.spatial import distance
+import itertools
+import json
 
 import logging
 logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=logging.INFO)
@@ -52,6 +54,8 @@ class PanelSubmission(object):
         self.tags = []
         for col in (9, 10, 11):
             self.tags.append(clean_words(line[col]))
+
+        self.tags = filter(lambda tag: len(tag), map(lambda tag: tag.strip().lower(), self.tags))
 
         self.links = []
         for col in (12, 13, 14, 15):
@@ -234,9 +238,7 @@ def gensim_tokenizing(data_set):
 def matching_tags(panel_submissions):
     tags_to_titles = {}
     for ps in panel_submissions:
-        index_tags = filter(lambda tag: len(tag), map(lambda tag: tag.strip().lower(), ps.tags))
-        
-        for current_tag in index_tags:
+        for current_tag in ps.tags:
             if not current_tag in tags_to_titles:
                 tags_to_titles[current_tag] = set()
 
@@ -251,15 +253,14 @@ def matching_tags(panel_submissions):
 
         if num_titles > 1:
             sorted_titles = sorted(current_titles)
-            for first_index in xrange(num_titles - 1):
-                for second_index in xrange(1, num_titles):
-                    if first_index != second_index:
-                        title_tuple = (sorted_titles[first_index], sorted_titles[second_index])
+            for first_index, second_index in itertools.combinations(xrange(num_titles), 2):
+                if first_index != second_index:
+                    title_tuple = (sorted_titles[first_index], sorted_titles[second_index])
 
-                        if not title_tuple in titles_to_tags:
-                            titles_to_tags[title_tuple] = set()
+                    if not title_tuple in titles_to_tags:
+                        titles_to_tags[title_tuple] = set()
 
-                        titles_to_tags[title_tuple].add(tag)
+                    titles_to_tags[title_tuple].add(tag)
 
     # TODO: generate tag matching graph
 
@@ -294,6 +295,52 @@ def print_clicks(titles_to_tags, min_length=2):
     for tags, titles in sorted_tagsets:
         print '{tags} => {titles}'.format(tags=tags, titles=tuple(titles))
 
+    return tagset_to_matches
+
+
+def write_network_json(panel_submissions, output_path):
+    submissions = []
+    tag_dict = {}
+    link_dict = {}
+
+    for ps in panel_submissions:
+        submission_id = hash(ps)
+        submissions.append({
+            'id': submission_id,
+            'title': ps.title,
+            'speaker': ps.speaker,
+            'tags': [hash(tag) for tag in ps.tags]
+        })
+
+        for tag in ps.tags:
+            if not tag in tag_dict:
+                tag_dict[tag] = []
+
+            tag_dict[tag].append(submission_id)
+
+        for first_tag, second_tag in itertools.combinations(ps.tags, 2):
+            first_tag_id = hash(first_tag)
+            second_tag_id = hash(second_tag)
+
+            if first_tag_id <= second_tag_id:
+                key = (first_tag_id, second_tag_id)
+            else:
+                key = (second_tag_id, first_tag_id)
+
+            if not key in link_dict:
+                link_dict[key] = []
+
+            link_dict[key].append(submission_id)
+
+    tags = [{'name': tag, 'id': hash(tag), 'submissions': sorted(tag_dict[tag])} for tag in tag_dict]
+    links = [{'source': link[0], 'target': link[1], 'submissions': sorted(link_dict[link])} for link in link_dict]
+
+    output = [tags, links, submissions]
+
+    with open(output_path, 'w') as output_file:
+        json.dump(output, output_file, ensure_ascii=False, sort_keys=True, indent=4, separators=(',', ': '))
+
+
 
 def main():
     # panel_submissions = read_data(INPUT_FILE)
@@ -302,10 +349,11 @@ def main():
 
     panel_submissions = read_data(INPUT_FILE)
     # gensim_tokenizing([ps.description for ps in panel_submissions])
-    tags_to_titles, titles_to_tags = matching_tags(panel_submissions)
-    print_tag_matches(tags_to_titles)
-    print
-    print_clicks(titles_to_tags)
+    # tags_to_titles, titles_to_tags = matching_tags(panel_submissions)
+    # print_tag_matches(tags_to_titles)
+    # print
+    # print_clicks(titles_to_tags)
+    write_network_json(panel_submissions, 'tag_network.json')
 
 if __name__ == '__main__':
     main()
