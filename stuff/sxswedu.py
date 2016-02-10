@@ -204,27 +204,61 @@ def matching_tags(titles, tags):
         index_tags = filter(lambda tag: len(tag), index_tags)
         for current_tag in index_tags:
             if not current_tag in tags_to_titles:
-                tags_to_titles[current_tag] = []
+                tags_to_titles[current_tag] = set()
 
-            tags_to_titles[current_tag].append(titles[index])
+            tags_to_titles[current_tag].add(titles[index])
 
-    matches = {}
+    tags_to_titles = {key: tags_to_titles[key] for key in tags_to_titles if len(tags_to_titles[key]) > 1}
+
+    titles_to_tags = {}
     for tag in tags_to_titles:
-        titles_for_tag = tags_to_titles[tag]
-        if len(titles_for_tag) > 1:
-            if not tag in matches:
-                matches[tag] = []
+        current_titles = tags_to_titles[tag]
+        num_titles = len(current_titles)
 
-            matches[tag].extend(titles_for_tag)
+        if num_titles > 1:
+            sorted_titles = sorted(current_titles)
+            for first_index in xrange(num_titles - 1):
+                for second_index in xrange(1, num_titles):
+                    if first_index != second_index:
+                        title_tuple = (sorted_titles[first_index], sorted_titles[second_index])
 
-    return matches
+                        if not title_tuple in titles_to_tags:
+                            titles_to_tags[title_tuple] = set()
+
+                        titles_to_tags[title_tuple].add(tag)
+
+    # TODO: generate tag matching graph
+
+    return tags_to_titles, titles_to_tags
 
 
-def print_tag_matches(matches):
-    sorted_matches = sorted(matches.items(), key=lambda item: len(item[1]), reverse=True)
+def print_tag_matches(tags_to_titles):
+    sorted_matches = sorted(tags_to_titles.items(), key=lambda item: len(item[1]), reverse=True)
     for match in sorted_matches:
         tag, titles = match
         print '{tag} ({num}) matches:\t{titles}'.format(tag=tag, num=len(titles), titles=str(titles))
+
+
+def print_clicks(titles_to_tags, min_length=2):
+    filtered_matches = filter(lambda item: len(item[1]) >= min_length, titles_to_tags.items())
+    sorted_matches = sorted(filtered_matches, key=lambda item: len(item[1]), reverse=True)
+
+    tagset_to_matches = {}
+    for match in sorted_matches:
+        title_pair, tags = match
+        first_title, second_title = title_pair
+        print '{first} <=> {second} matched on: {tags}'.format(first=first_title, second=second_title, tags=str(tags))
+
+        tags_tuple = tuple(tags)
+        if tags_tuple not in tagset_to_matches:
+            tagset_to_matches[tags_tuple] = set()
+
+        tagset_to_matches[tags_tuple].update(title_pair)
+
+    print
+    sorted_tagsets = sorted(tagset_to_matches.items(), key=lambda item: len(item[0]), reverse=True)
+    for tags, titles in sorted_tagsets:
+        print '{tags} => {titles}'.format(tags=tags, titles=tuple(titles))
 
 
 def main():
@@ -234,8 +268,10 @@ def main():
 
     titles, descriptions, learning_objectives, tags = read_data(INPUT_FILE)
     # gensim_tokenizing(descriptions)
-    matches = matching_tags(titles, tags)
-    print_tag_matches(matches)
+    tags_to_titles, titles_to_tags = matching_tags(titles, tags)
+    print_tag_matches(tags_to_titles)
+    print
+    print_clicks(titles_to_tags)
 
 if __name__ == '__main__':
     main()
