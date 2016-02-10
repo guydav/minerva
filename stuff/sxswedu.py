@@ -35,29 +35,54 @@ def clean_words(string):
     return clean
 
 
+class PanelSubmission(object):
+
+    def __init__(self, line):
+        self.title = line[0]
+        self.track = line[1]
+        self.format = line[2]
+        self.understanding_level = line[3]
+        self.speaker = line[4]
+        self.description = clean_words(line[5])
+
+        self.learning_objectives = []
+        for col in (6, 7, 8):
+            self.learning_objectives.append(clean_words(line[col]))
+
+        self.tags = []
+        for col in (9, 10, 11):
+            self.tags.append(clean_words(line[col]))
+
+        self.links = []
+        for col in (12, 13, 14, 15):
+            if col < len(line):
+                self.links.append(clean_words(line[col]))
+
+
 def read_data(path):
-    titles = []
-    descriptions = []
-    learning_objectives = []
-    tags = []
+    # titles = []
+    # descriptions = []
+    # learning_objectives = []
+    # tags = []
 
     with open(path) as data_file:
         reader = csv.reader(data_file.readlines())
 
         print 'Reading input:'
 
-        for line in tqdm(reader):
-            titles.append(clean_words(line[0]))
-            descriptions.append(clean_words(line[5]))
-            learning_objectives.append('\n'.join([clean_words(line[obj_col]) for obj_col in (6, 7, 8)]))
-            tags.append('\n'.join([clean_words(line[tag_col]) for tag_col in (9, 10, 11)]))
+        return [PanelSubmission(line) for line in tqdm(reader)]
+
+            # titles.append(clean_words(line[0]))
+            # descriptions.append(clean_words(line[5]))
+            # learning_objectives.append('\n'.join([clean_words(line[obj_col]) for obj_col in (6, 7, 8)]))
+            # tags.append('\n'.join([clean_words(line[tag_col]) for tag_col in (9, 10, 11)]))
 
             # for obj_column in (6, 7, 8):
             #     learning_objectives.append(clean_words(line[obj_column]))
             # for tag_column in (9, 10, 11):
             #     tags.append(clean_words(line[tag_column]))
 
-    return titles, descriptions, learning_objectives, tags
+    # return titles, descriptions, learning_objectives, tags
 
 
 def process_ngram(ngram_generator, limit=LIMIT):
@@ -97,8 +122,17 @@ def process_data_set(data_set):
     return top_words, top_bigrams, top_trigrams
 
 
-def process_data(descriptions, learning_objectives, tags):
+def process_data(panel_submissions):
+    # output = []
+    # output.extend(process_data_set(descriptions))
+    # output.extend(process_data_set(learning_objectives))
+    # output.extend(process_data_set(tags))
+    # output.extend(process_data_set(descriptions + learning_objectives + tags))
     output = []
+    descriptions = [ps.description for ps in panel_submissions]
+    learning_objectives = ['\n'.join(ps.learning_objectives for ps in panel_submissions)]
+    tags = ['\n'.join(ps.tags for ps in panel_submissions)]
+
     output.extend(process_data_set(descriptions))
     output.extend(process_data_set(learning_objectives))
     output.extend(process_data_set(tags))
@@ -197,16 +231,16 @@ def gensim_tokenizing(data_set):
         print
 
 
-def matching_tags(titles, tags):
+def matching_tags(panel_submissions):
     tags_to_titles = {}
-    for index in xrange(len(titles)):
-        index_tags = map(lambda tag: tag.strip().lower(), tags[index].split('\n'))
-        index_tags = filter(lambda tag: len(tag), index_tags)
+    for ps in panel_submissions:
+        index_tags = filter(lambda tag: len(tag), map(lambda tag: tag.strip().lower(), ps.tags))
+        
         for current_tag in index_tags:
             if not current_tag in tags_to_titles:
                 tags_to_titles[current_tag] = set()
 
-            tags_to_titles[current_tag].add(titles[index])
+            tags_to_titles[current_tag].add(ps.title)
 
     tags_to_titles = {key: tags_to_titles[key] for key in tags_to_titles if len(tags_to_titles[key]) > 1}
 
@@ -262,13 +296,13 @@ def print_clicks(titles_to_tags, min_length=2):
 
 
 def main():
-    # titles, descriptions, learning_objectives, tags = read_data(INPUT_FILE)
-    # output = process_data(descriptions, learning_objectives, tags)
+    # panel_submissions = read_data(INPUT_FILE)
+    # output = process_data(panel_submissions)
     # write_output(output, OUTPUT_FILE)
 
-    titles, descriptions, learning_objectives, tags = read_data(INPUT_FILE)
-    # gensim_tokenizing(descriptions)
-    tags_to_titles, titles_to_tags = matching_tags(titles, tags)
+    panel_submissions = read_data(INPUT_FILE)
+    # gensim_tokenizing([ps.description for ps in panel_submissions])
+    tags_to_titles, titles_to_tags = matching_tags(panel_submissions)
     print_tag_matches(tags_to_titles)
     print
     print_clicks(titles_to_tags)
