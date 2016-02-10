@@ -269,6 +269,7 @@ def matching_tags(panel_submissions):
 
 def print_tag_matches(tags_to_titles):
     sorted_matches = sorted(tags_to_titles.items(), key=lambda item: len(item[1]), reverse=True)
+    print 'Printing {num} tag => title results:'.format(num = len(sorted_matches))
     for match in sorted_matches:
         tag, titles = match
         print '{tag} ({num}) matches:\t{titles}'.format(tag=tag, num=len(titles), titles=str(titles))
@@ -278,6 +279,7 @@ def print_clicks(titles_to_tags, min_length=2):
     filtered_matches = filter(lambda item: len(item[1]) >= min_length, titles_to_tags.items())
     sorted_matches = sorted(filtered_matches, key=lambda item: len(item[1]), reverse=True)
 
+    print '\nPrinting {num} match => matching tags results:'.format(num=len(sorted_matches))
     tagset_to_matches = {}
     for match in sorted_matches:
         title_pair, tags = match
@@ -290,8 +292,8 @@ def print_clicks(titles_to_tags, min_length=2):
 
         tagset_to_matches[tags_tuple].update(title_pair)
 
-    print
     sorted_tagsets = sorted(tagset_to_matches.items(), key=lambda item: len(item[0]), reverse=True)
+    print '\nPrinting {num} tag set => matching titles results:'.format(num=len(sorted_tagsets))
     for tags, titles in sorted_tagsets:
         print '{tags} => {titles}'.format(tags=tags, titles=tuple(titles))
 
@@ -349,11 +351,10 @@ def main():
 
     panel_submissions = read_data(INPUT_FILE)
     # gensim_tokenizing([ps.description for ps in panel_submissions])
-    # tags_to_titles, titles_to_tags = matching_tags(panel_submissions)
-    # print_tag_matches(tags_to_titles)
-    # print
-    # print_clicks(titles_to_tags)
-    write_network_json(panel_submissions, 'tag_network.json')
+    tags_to_titles, titles_to_tags = matching_tags(panel_submissions)
+    print_tag_matches(tags_to_titles)
+    print_clicks(titles_to_tags)
+    # write_network_json(panel_submissions, 'tag_network.json')
 
 if __name__ == '__main__':
     main()
