@@ -7,6 +7,8 @@ from sklearn import cluster, metrics
 from scipy.spatial import distance
 import itertools
 import json
+from graph_tool.all import *
+import graph_tool.all as gt
 
 import logging
 logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=logging.INFO)
@@ -300,7 +302,7 @@ def print_clicks(titles_to_tags, min_length=2):
     return tagset_to_matches
 
 
-def write_network_json(panel_submissions, output_path):
+def write_network_json(panel_submissions, output_path=None):
     submissions = []
     tag_dict = {}
     link_dict = {}
@@ -337,12 +339,34 @@ def write_network_json(panel_submissions, output_path):
     tags = [{'name': tag, 'id': hash(tag), 'submissions': sorted(tag_dict[tag])} for tag in tag_dict]
     links = [{'source': link[0], 'target': link[1], 'submissions': sorted(link_dict[link])} for link in link_dict]
 
-    output = [tags, links, submissions]
+    output = {'tags': tags, 'links': links, 'submissions': submissions}
 
-    with open(output_path, 'w') as output_file:
-        json.dump(output, output_file, ensure_ascii=False, sort_keys=True, indent=4, separators=(',', ': '))
+    if output_path:
+        with open(output_path, 'w') as output_file:
+            json.dump(output, output_file, ensure_ascii=False, sort_keys=True, indent=4, separators=(',', ': '))
+
+    return tags, links, submissions
 
 
+def draw_graph(tags, links):
+    graph = gt.Graph(directed=False)
+    vertex_names = graph.new_vertex_property('string')
+    vertex_sizes = graph.new_vertex_property('double')
+    edge_width = graph.new_edge_property('double')
+
+    tag_id_to_vertex = {}
+
+    for tag in tags:
+        vertex = graph.add_vertex()
+        vertex_names[vertex] = tag['name']
+        vertex_sizes[vertex] = len(tag['submissions'])
+        tag_id_to_vertex[tag['id']] = vertex
+
+    for link in links:
+        edge = graph.add_edge(tag_id_to_vertex[link['source']], tag_id_to_vertex[link['target']])
+        edge_width[edge] = len(link['submissions'])
+
+    gt.graph_draw(g, vertex_text=vertex_names, vertex_size=vertex_sizes, edge_pen_width=edge_width)
 
 def main():
     # panel_submissions = read_data(INPUT_FILE)
@@ -351,10 +375,11 @@ def main():
 
     panel_submissions = read_data(INPUT_FILE)
     # gensim_tokenizing([ps.description for ps in panel_submissions])
-    tags_to_titles, titles_to_tags = matching_tags(panel_submissions)
-    print_tag_matches(tags_to_titles)
-    print_clicks(titles_to_tags)
-    # write_network_json(panel_submissions, 'tag_network.json')
+    # tags_to_titles, titles_to_tags = matching_tags(panel_submissions)
+    # print_tag_matches(tags_to_titles)
+    # print_clicks(titles_to_tags)
+    tags, links, submissions = write_network_json(panel_submissions, 'tag_network.json')
+    # draw_graph(tags, links)
 
 if __name__ == '__main__':
     main()
