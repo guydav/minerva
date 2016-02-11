@@ -9,6 +9,7 @@ import itertools
 import json
 from graph_tool.all import *
 import graph_tool.all as gt
+import numpy as np
 
 import logging
 logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=logging.INFO)
@@ -339,7 +340,7 @@ def write_network_json(panel_submissions, output_path=None):
     tags = [{'name': tag, 'id': hash(tag), 'submissions': sorted(tag_dict[tag])} for tag in tag_dict]
     links = [{'source': link[0], 'target': link[1], 'submissions': sorted(link_dict[link])} for link in link_dict]
 
-    output = {'tags': tags, 'links': links, 'submissions': submissions}
+    output = {'nodes': tags, 'links': links, 'submissions': submissions}
 
     if output_path:
         with open(output_path, 'w') as output_file:
@@ -359,14 +360,14 @@ def draw_graph(tags, links):
     for tag in tags:
         vertex = graph.add_vertex()
         vertex_names[vertex] = tag['name']
-        vertex_sizes[vertex] = len(tag['submissions'])
+        vertex_sizes[vertex] = np.log(len(tag['submissions']))
         tag_id_to_vertex[tag['id']] = vertex
 
     for link in links:
         edge = graph.add_edge(tag_id_to_vertex[link['source']], tag_id_to_vertex[link['target']])
-        edge_width[edge] = len(link['submissions'])
+        edge_width[edge] = np.log(len(link['submissions']))
 
-    gt.graph_draw(g, vertex_text=vertex_names, vertex_size=vertex_sizes, edge_pen_width=edge_width)
+    gt.graph_draw(graph, vertex_text=vertex_names, vertex_size=vertex_sizes, edge_pen_width=edge_width)
 
 def main():
     # panel_submissions = read_data(INPUT_FILE)
