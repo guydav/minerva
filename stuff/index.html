@@ -25,19 +25,27 @@ var width = $(document).width(),
 var color = d3.scale.category20();
 
 var force = d3.layout.force()
-    .charge(-120)
-    .linkDistance(30)
+    .charge(-200)
+    .linkDistance(100)
     .size([width, height]);
 
 var svg = d3.select("body").append("svg")
     .attr("width", width)
     .attr("height", height);
 
+//svg.append("text")
+//        .attr("x", (width / 2))
+//        .attr("y", 50)
+//        .attr("text-anchor", "middle")
+//        .style("font-size", "16px")
+//        .style("text-decoration", "underline")
+//        .text("Test graphs");
+
 d3.json("tag_network.json", function(error, graph) {
   if (error) throw error;
 
   var vertices = graph.nodes.filter(function(n) {
-    return !(n.submissions.length < 2);
+    return n.submissions.length >= 8;
   });
 
   var edges = [];
@@ -53,7 +61,7 @@ d3.json("tag_network.json", function(error, graph) {
       edges.push({
         source: sourceNode,
         target: targetNode,
-        value: e.submissions.length
+        submissions: e.submissions,
       });
     }
   });
@@ -67,18 +75,19 @@ d3.json("tag_network.json", function(error, graph) {
     .enter().append("line")
       .attr("class", "link")
       .style("stroke", function(d) { return color(Math.floor((Math.random() * 20) + 1)); })
-      .style("stroke-width", function(d) { return Math.sqrt(d.value); });
+      .style("stroke-width", function(d) { return d.submissions.length * 1.5; });
+
+  link.append("title").text(function(d) { return d.submissions;});
 
   var node = svg.selectAll(".node")
       .data(vertices)
     .enter().append("circle")
       .attr("class", "node")
-      .attr("r", 5)
+      .attr("r", function(d) { return Math.log(d.submissions.length) * 5; })
       .style("fill", function(d) { return color(Math.floor((Math.random() * 20) + 1)); })
       .call(force.drag);
 
-  node.append("title")
-      .text(function(d) { return d.name; });
+  node.append("title").text(function(d) { return d.name; });
 
   force.on("tick", function() {
     link.attr("x1", function(d) { return d.source.x; })
