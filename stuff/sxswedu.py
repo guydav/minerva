@@ -304,18 +304,18 @@ def print_clicks(titles_to_tags, min_length=2):
 
 
 def write_network_json(panel_submissions, output_path=None, tag_min=0, link_min=0):
-    submissions = []
+    submissions = {}
     tag_dict = {}
     link_dict = {}
 
     for ps in panel_submissions:
         submission_id = hash(ps)
-        submissions.append({
+        submissions[submission_id] = {
             'id': submission_id,
             'title': ps.title,
             'speaker': ps.speaker,
             'tags': [hash(tag) for tag in ps.tags]
-        })
+        }
 
         for tag in ps.tags:
             if not tag in tag_dict:
