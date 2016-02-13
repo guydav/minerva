@@ -382,7 +382,7 @@ def main():
     # tags_to_titles, titles_to_tags = matching_tags(panel_submissions)
     # print_tag_matches(tags_to_titles)
     # print_clicks(titles_to_tags)
-    tags, links, submissions = write_network_json(panel_submissions, 'tag_network.json', 2, 1)
+    tags, links, submissions = write_network_json(panel_submissions, 'all_tag_network.json')
     # draw_graph(tags, links)
 
 if __name__ == '__main__':
