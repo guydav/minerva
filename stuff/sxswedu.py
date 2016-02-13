@@ -8,7 +8,7 @@ from scipy.spatial import distance
 import itertools
 import json
 from graph_tool.all import *
-import graph_tool.all as gt
+# import graph_tool.all as gt
 import numpy as np
 
 import logging
@@ -303,7 +303,7 @@ def print_clicks(titles_to_tags, min_length=2):
     return tagset_to_matches
 
 
-def write_network_json(panel_submissions, output_path=None):
+def write_network_json(panel_submissions, output_path=None, tag_min=0, link_min=0):
     submissions = []
     tag_dict = {}
     link_dict = {}
@@ -337,8 +337,10 @@ def write_network_json(panel_submissions, output_path=None):
 
             link_dict[key].append(submission_id)
 
-    tags = [{'name': tag, 'id': hash(tag), 'submissions': sorted(tag_dict[tag])} for tag in tag_dict]
-    links = [{'source': link[0], 'target': link[1], 'submissions': sorted(link_dict[link])} for link in link_dict]
+    tags = [{'name': tag, 'id': hash(tag), 'submissions': sorted(tag_dict[tag])}
+            for tag in tag_dict if len(tag_dict[tag]) > tag_min]
+    links = [{'source': link[0], 'target': link[1], 'submissions': sorted(link_dict[link])}
+             for link in link_dict if len(link_dict[link]) > link_min]
 
     output = {'nodes': tags, 'links': links, 'submissions': submissions}
 
@@ -349,25 +351,26 @@ def write_network_json(panel_submissions, output_path=None):
     return tags, links, submissions
 
 
-def draw_graph(tags, links):
-    graph = gt.Graph(directed=False)
-    vertex_names = graph.new_vertex_property('string')
-    vertex_sizes = graph.new_vertex_property('double')
-    edge_width = graph.new_edge_property('double')
+# def draw_graph(tags, links):
+#     graph = gt.Graph(directed=False)
+#     vertex_names = graph.new_vertex_property('string')
+#     vertex_sizes = graph.new_vertex_property('double')
+#     edge_width = graph.new_edge_property('double')
+#
+#     tag_id_to_vertex = {}
+#
+#     for tag in tags:
+#         vertex = graph.add_vertex()
+#         vertex_names[vertex] = tag['name']
+#         vertex_sizes[vertex] = np.log(len(tag['submissions']))
+#         tag_id_to_vertex[tag['id']] = vertex
+#
+#     for link in links:
+#         edge = graph.add_edge(tag_id_to_vertex[link['source']], tag_id_to_vertex[link['target']])
+#         edge_width[edge] = np.log(len(link['submissions']))
+#
+#     gt.graph_draw(graph, vertex_text=vertex_names, vertex_size=vertex_sizes, edge_pen_width=edge_width)
 
-    tag_id_to_vertex = {}
-
-    for tag in tags:
-        vertex = graph.add_vertex()
-        vertex_names[vertex] = tag['name']
-        vertex_sizes[vertex] = np.log(len(tag['submissions']))
-        tag_id_to_vertex[tag['id']] = vertex
-
-    for link in links:
-        edge = graph.add_edge(tag_id_to_vertex[link['source']], tag_id_to_vertex[link['target']])
-        edge_width[edge] = np.log(len(link['submissions']))
-
-    gt.graph_draw(graph, vertex_text=vertex_names, vertex_size=vertex_sizes, edge_pen_width=edge_width)
 
 def main():
     # panel_submissions = read_data(INPUT_FILE)
@@ -379,7 +382,7 @@ def main():
     # tags_to_titles, titles_to_tags = matching_tags(panel_submissions)
     # print_tag_matches(tags_to_titles)
     # print_clicks(titles_to_tags)
-    tags, links, submissions = write_network_json(panel_submissions, 'tag_network.json')
+    tags, links, submissions = write_network_json(panel_submissions, 'tag_network.json', 2, 1)
     # draw_graph(tags, links)
 
 if __name__ == '__main__':
