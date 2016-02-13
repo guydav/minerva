@@ -7,9 +7,9 @@ from sklearn import cluster, metrics
 from scipy.spatial import distance
 import itertools
 import json
-from graph_tool.all import *
+# from graph_tool.all import *
 # import graph_tool.all as gt
-import numpy as np
+# import numpy as np
 
 import logging
 logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=logging.INFO)
