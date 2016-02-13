@@ -342,6 +342,13 @@ def write_network_json(panel_submissions, output_path=None, tag_min=0, link_min=
     links = [{'source': link[0], 'target': link[1], 'submissions': sorted(link_dict[link])}
              for link in link_dict if len(link_dict[link]) > link_min]
 
+    def tag_has_links(tag):
+        return len(filter(lambda l: l['source'] == tag['id'] or
+                                    l['target'] == tag['id'], links)
+                  ) != 0
+
+    tags = filter(tag_has_links, tags)
+
     output = {'nodes': tags, 'links': links, 'submissions': submissions}
 
     if output_path:
@@ -382,7 +389,7 @@ def main():
     # tags_to_titles, titles_to_tags = matching_tags(panel_submissions)
     # print_tag_matches(tags_to_titles)
     # print_clicks(titles_to_tags)
-    tags, links, submissions = write_network_json(panel_submissions, 'all_tag_network.json')
+    tags, links, submissions = write_network_json(panel_submissions, 'tag_network.json', 2, 1)
     # draw_graph(tags, links)
 
 if __name__ == '__main__':
