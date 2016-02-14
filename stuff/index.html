@@ -28,9 +28,10 @@
     var color = d3.scale.category20();
 
     var force = cola.d3adaptor()
-        .linkDistance(function (d) {
-          return Math.sqrt(d.submissions.length) * 40;
-        })
+        // .linkDistance(function (d) {
+        //   return Math.sqrt(d.submissions.length) * 40;
+        // })
+        .symmetricDiffLinkLengths(75)
         .avoidOverlaps(true)
         .size([width, height]);
 
