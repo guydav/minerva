@@ -123,28 +123,32 @@
 
       var submissionLengths = vertices.map(function (d) {
         return d.submissions.length;
-      }).sort(function (a, b) { return a - b; })
-      console.log(submissionLengths);
-      var maxSubmissions = submissionLengths[submissionLengths.length - 1];
+      }).sort(function (a, b) { return b - a; })
+      var maxSubmissions = submissionLengths[0];
 
       // here is the function that will
       // determine the radial location for
       // each node in the force layout.
-      //
-      // arbitrarily, it uses the nodes index in the
-      // the data array to pick out where it should
-      // land. In a real program, you might want to
-      // specify this by some grouping attribute
-      //
+      var innerIndex = 0;
+      var numOfInner = 5;
+      var innerAngle = 360 / numOfInner
+
+      var outerIndex = 0;
       function radial(data, index, alpha) {
-        // check out the post
-        // http://macwright.org/2013/03/05/math-for-pictures.html
-        // for more info on how this works
-        var numSubmissions = data.submissions.length;
         var startAngle = 0;
-        // var radius = maxSubmissions - numSubmissions;
-        var radius = maxSubmissions == numSubmissions ? 0 : Math.min(width / 3, height / 3);
-        var currentAngle = startAngle + (2 * index);
+        var numSubmissions = data.submissions.length;
+
+        var radius, currentAngle;
+        if (numSubmissions > submissionLengths[numOfInner]) {
+          radius = Math.min(width / 6, height / 6);
+          currentAngle = startAngle + (innerAngle * innerIndex);
+          innerIndex += 1;
+        }
+        else {
+          radius = Math.min(width / 3, height / 3);
+          currentAngle = startAngle + (3 * outerIndex);
+          outerIndex += 1;
+        }
         var currentAngleRadians = currentAngle * D2R;
         var radialPoint = {
           x: (width / 2) + radius * Math.cos(currentAngleRadians),
