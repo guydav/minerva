@@ -16,6 +16,7 @@
 <body>
     <link rel="stylesheet" href="d3.tip.css">
     <script src="//d3js.org/d3.v3.js" charset="utf-8"></script>
+    <script src="http://marvl.infotech.monash.edu/webcola/cola.v3.min.js"></script>
     <script src="//code.jquery.com/jquery-1.12.0.min.js"></script>
     <script src="//code.jquery.com/jquery-migrate-1.2.1.min.js"></script>
     <script src="d3.tip.js"></script>
@@ -26,10 +27,23 @@
 
     var color = d3.scale.category20();
 
-    var force = d3.layout.force()
-        .charge(-200)
-        .linkDistance(300)
+    var force = cola.d3adaptor()
+        .linkDistance(function (d) {
+          return Math.sqrt(d.submissions.length) * 40;
+        })
+        .avoidOverlaps(true)
         .size([width, height]);
+
+    // var force = d3.layout.force()
+    //     .charge(function (n) {
+    //       return (Math.log(n.submissions.length) * 10) - 100;
+    //     })
+    //     .linkDistance(400)
+    //     .linkStrength(function (d) {
+    //       return d.submissions.length > 20 ? .5 : .1;
+    //     })
+    //     .gravity(0.05)
+    //     .size([width, height]);
 
     var svg = d3.select("body").append("svg")
         .attr("width", width)
@@ -43,7 +57,7 @@
         if (error) throw error;
 
         var vertices = graph.nodes.filter(function(n) {
-            return n.submissions.length >= 8;
+            return n.submissions.length > 2;
         });
 
         var edges = [];
@@ -51,7 +65,7 @@
             var sourceNode = vertices.filter(function(n) {return n.id === e.source; })[0];
             var targetNode = vertices.filter(function(n) {return n.id === e.target; })[0];
 
-            if (sourceNode && targetNode) {
+            if (sourceNode && targetNode && e.submissions.length > 1) {
                 edges.push({
                     source: sourceNode,
                     target: targetNode,
@@ -61,10 +75,16 @@
             }
         });
 
+        vertices = vertices.filter(function (n) {
+          return edges.filter(function (e) {
+            return e.source == n || e.target == n
+          }).length != 0
+        });
+
         force
           .nodes(vertices)
           .links(edges)
-          .start();
+          .start(100, 100, 100);
 
          var link = svg.selectAll(".link")
                  .data(edges)
@@ -95,17 +115,6 @@
                 .attr("dy", ".3em")
                 .style("text-anchor", "middle")
                 .text(function(d) { return d.name; });
-//        node.append("title").text(function(d) { return d.name; });
-
-    //    var text = svg.selectAll(".node")
-    //            .data(vertices)
-    //            .enter()
-    //            .append("text")
-    //            .attr("x", function(d) { return d.cx; })
-    //            .attr("y", function(d) { return d.cy; })
-    //            .attr("font-family", "sans-serif")
-    //            .attr("font-size", "12px")
-    //            .fill("black");
 
         force.on("tick", function() {
             link.attr("x1", function(d) { return d.source.x; })

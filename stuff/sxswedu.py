@@ -347,7 +347,7 @@ def write_network_json(panel_submissions, output_path=None, tag_min=0, link_min=
                                     l['target'] == tag['id'], links)
                   ) != 0
 
-    tags = filter(tag_has_links, tags)
+    # tags = filter(tag_has_links, tags)
 
     output = {'nodes': tags, 'links': links, 'submissions': submissions}
 
