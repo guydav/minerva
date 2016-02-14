@@ -31,7 +31,7 @@
         // .linkDistance(function (d) {
         //   return Math.sqrt(d.submissions.length) * 40;
         // })
-        .symmetricDiffLinkLengths(75)
+        .symmetricDiffLinkLengths(80)
         .avoidOverlaps(true)
         .size([width, height]);
 
@@ -58,7 +58,7 @@
         if (error) throw error;
 
         var vertices = graph.nodes.filter(function(n) {
-            return n.submissions.length > 2;
+            return n.submissions.length > 8;
         });
 
         var edges = [];
@@ -66,7 +66,7 @@
             var sourceNode = vertices.filter(function(n) {return n.id === e.source; })[0];
             var targetNode = vertices.filter(function(n) {return n.id === e.target; })[0];
 
-            if (sourceNode && targetNode && e.submissions.length > 1) {
+            if (sourceNode && targetNode && e.submissions.length > 0) {
                 edges.push({
                     source: sourceNode,
                     target: targetNode,

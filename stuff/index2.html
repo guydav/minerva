@@ -145,8 +145,8 @@
           innerIndex += 1;
         }
         else {
-          radius = Math.min(width / 3, height / 3);
-          currentAngle = startAngle + (3 * outerIndex);
+          radius = Math.min(width / 3, height / 3) + 100;
+          currentAngle = startAngle + (3 * index);
           outerIndex += 1;
         }
         var currentAngleRadians = currentAngle * D2R;
@@ -160,17 +160,17 @@
         // by the alpha of the force layout.
         // this gives other forces - like gravity -
         // to have an effect on the nodes
-        var affectSize = alpha * .1;
+        var affectSize = alpha * 10;
 
         // here we adjust the x / y coordinates stored in our
         // data to move them closer to where we want them
         // this doesn't move the visual circles yet -
         // we will do that in moveToRadial
-        // data.x += (radialPoint.x - data.x) * affectSize;
-        // data.y += (radialPoint.y - data.y) * affectSize;
+        data.x += (radialPoint.x - data.x) * affectSize;
+        data.y += (radialPoint.y - data.y) * affectSize;
 
-        data.x = radialPoint.x;
-        data.y = radialPoint.y;
+        // data.x = radialPoint.x;
+        // data.y = radialPoint.y;
 
       }
 

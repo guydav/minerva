@@ -310,7 +310,7 @@
       point.x += width
       bbox.e = point.matrixTransform(matrix)
       point.x -= width / 2
-      point.y -= height / 2
+      point.y -= height / 8
       bbox.n = point.matrixTransform(matrix)
       point.y += height
       bbox.s = point.matrixTransform(matrix)
