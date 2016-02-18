@@ -26,7 +26,9 @@ COMMON_100_WORDS = {'the', 'be', 'to', 'of', 'and', 'a', 'in', 'that', 'have', '
                     'is', 'are', 'has'}
 PUNCTUATION = {'.', ',', '(', ')', ':', '?', '!'}
 INPUT_FILE = 'SXSWedu_and_Minerva_Student_PanelPicker_Data_Project.csv'
+CONFIRMED_PANELS_FILE = 'SXSWedu_and_Minerva_Student_PanelPicker_Data_Project_Confirmed_Sessions.csv'
 OUTPUT_FILE = 'cleaned_output.csv'
+CONFIRMED_OUTPUT_FILE = 'confirmed_output.csv'
 LIMIT = 100
 
 
@@ -66,7 +68,24 @@ class PanelSubmission(object):
                 self.links.append(clean_words(line[col]))
 
 
-def read_data(path):
+class ConfirmedPanelSubmission(object):
+
+    def __init__(self, line):
+        self.title = line[0]
+        self.track = line[1]
+        self.format = line[2]
+        self.understanding_level = line[3]
+        self.speaker = line[4]
+        self.description = clean_words(line[5])
+
+        self.tags = []
+        for col in (6, 7, 8):
+            self.tags.append(clean_words(line[col]))
+
+        self.tags = filter(lambda tag: len(tag), map(lambda tag: tag.strip().lower(), self.tags))
+
+
+def read_data(path, panel_type=PanelSubmission):
     # titles = []
     # descriptions = []
     # learning_objectives = []
@@ -77,7 +96,7 @@ def read_data(path):
 
         print 'Reading input:'
 
-        return [PanelSubmission(line) for line in tqdm(reader)]
+        return [panel_type(line) for line in tqdm(reader)]
 
             # titles.append(clean_words(line[0]))
             # descriptions.append(clean_words(line[5]))
@@ -147,6 +166,22 @@ def process_data(panel_submissions):
     return output
 
 
+def process_confirmed_panels(confirmed_submissions):
+    output = []
+    descriptions = [ps.description for ps in confirmed_submissions]
+    # tags = []
+    tags = ['\n'.join(ps.tags) for ps in confirmed_submissions]
+    # for ps in confirmed_submissions:
+    #     print ps.tags
+    #     tags.append('\n'.join(ps.tags))
+
+    output.extend(process_data_set(descriptions))
+    output.extend(process_data_set(tags))
+    output.extend(process_data_set(descriptions + tags))
+
+    return output
+
+
 HEADERS = ('Description Words', 'Description Bigrams', 'Description Trigrams', 'Objective Words', 'Objective Bigrams',
            'Objective Trigrams', 'Tag Words', 'Tag Bigrams', 'Tag Trigrams', 'Everything Words', 'Everything Bigrams',
            'Everything Trigrams')
@@ -159,6 +194,20 @@ def write_output(output, path):
         for index in xrange(len(output)):
             current_output = output[index]
             current_output.insert(0, HEADERS[index])
+            writer.writerow(current_output)
+
+
+CONFIRMED_HEADERS = ('Description Words', 'Description Bigrams', 'Description Trigrams', 'Tag Words',
+                    'Tag Bigrams', 'Tag Trigrams', 'Everything Words', 'Everything Bigrams', 'Everything Trigrams')
+
+
+def write_confirmed_output(output, path):
+    with open(path, 'w') as output_file:
+        writer = csv.writer(output_file)
+
+        for index in xrange(len(output)):
+            current_output = output[index]
+            current_output.insert(0, CONFIRMED_HEADERS[index])
             writer.writerow(current_output)
 
 
@@ -307,6 +356,7 @@ def write_network_json(panel_submissions, output_path=None, tag_min=0, link_min=
     submissions = {}
     tag_dict = {}
     link_dict = {}
+    strongest_neighbors = {} # strongest_neighboringing tag to each tag
 
     for ps in panel_submissions:
         submission_id = hash(ps)
@@ -322,6 +372,9 @@ def write_network_json(panel_submissions, output_path=None, tag_min=0, link_min=
                 tag_dict[tag] = []
 
             tag_dict[tag].append(submission_id)
+            tag_hash = hash(tag) # had to resist naming this variable hash_tag
+            if tag_hash not in strongest_neighbors:
+                strongest_neighbors[tag_hash] = (0, [])
 
         for first_tag, second_tag in itertools.combinations(ps.tags, 2):
             first_tag_id = hash(first_tag)
@@ -337,15 +390,31 @@ def write_network_json(panel_submissions, output_path=None, tag_min=0, link_min=
 
             link_dict[key].append(submission_id)
 
-    tags = [{'name': tag, 'id': hash(tag), 'submissions': sorted(tag_dict[tag])}
-            for tag in tag_dict if len(tag_dict[tag]) > tag_min]
+    for link in link_dict:
+        first_tag, second_tag = link
+        link_strength = len(link_dict[link])
+
+        first_tag_strength, first_tag_neighbors = strongest_neighbors[first_tag]
+        if link_strength > first_tag_strength:
+            strongest_neighbors[first_tag] = (link_strength, [second_tag])
+        elif link_strength == first_tag_strength:
+            first_tag_neighbors.append(second_tag)
+
+        second_tag_strength, second_tag_neighbors = strongest_neighbors[second_tag]
+        if link_strength > second_tag_strength:
+            strongest_neighbors[second_tag] = (link_strength, [first_tag])
+        elif link_strength == second_tag_strength:
+            second_tag_neighbors.append(first_tag)
+
+    tags = [{'name': tag, 'id': hash(tag), 'submissions': sorted(tag_dict[tag]),
+             'neighbors': strongest_neighbors[hash(tag)][1]} for tag in tag_dict if len(tag_dict[tag]) > tag_min]
     links = [{'source': link[0], 'target': link[1], 'submissions': sorted(link_dict[link])}
              for link in link_dict if len(link_dict[link]) > link_min]
 
-    def tag_has_links(tag):
-        return len(filter(lambda l: l['source'] == tag['id'] or
-                                    l['target'] == tag['id'], links)
-                  ) != 0
+    # def tag_has_links(tag):
+    #     return len(filter(lambda l: l['source'] == tag['id'] or
+    #                                 l['target'] == tag['id'], links)
+    #               ) != 0
 
     # tags = filter(tag_has_links, tags)
 
@@ -384,13 +453,18 @@ def main():
     # output = process_data(panel_submissions)
     # write_output(output, OUTPUT_FILE)
 
-    panel_submissions = read_data(INPUT_FILE)
+    # output = process_data(panel_submissions)
     # gensim_tokenizing([ps.description for ps in panel_submissions])
     # tags_to_titles, titles_to_tags = matching_tags(panel_submissions)
     # print_tag_matches(tags_to_titles)
     # print_clicks(titles_to_tags)
-    tags, links, submissions = write_network_json(panel_submissions, 'tag_network.json', 2, 1)
+    # tags, links, submissions = write_network_json(panel_submissions, 'tag_network.json', 0, 0)
     # draw_graph(tags, links)
+
+    confirmed_panel_submissions = read_data(CONFIRMED_PANELS_FILE, ConfirmedPanelSubmission)
+    output = process_confirmed_panels(confirmed_panel_submissions)
+    write_confirmed_output(output, CONFIRMED_OUTPUT_FILE)
+    tags, links, submissions = write_network_json(confirmed_panel_submissions, 'confirmed_tag_network.json', 0, 0)
 
 if __name__ == '__main__':
     main()
