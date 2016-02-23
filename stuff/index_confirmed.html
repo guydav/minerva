@@ -34,7 +34,7 @@
         // .linkDistance(function (d) {
         //   return Math.sqrt(d.submissions.length) * 40;
         // })
-        .symmetricDiffLinkLengths(75)
+        .symmetricDiffLinkLengths(125)
         .avoidOverlaps(true)
         .size([width, height]);
 
@@ -57,11 +57,11 @@
 
     svg.call(tip);
 
-    d3.json("tag_network.json", function(error, graph) {
+    d3.json("confirmed_tag_network.json", function(error, graph) {
         if (error) throw error;
 
         var vertices = graph.nodes.filter(function(n) {
-            return n.submissions.length >= 10;
+            return n.submissions.length >= 5;
         });
 
         var edges = [];
