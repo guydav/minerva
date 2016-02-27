@@ -2,7 +2,38 @@
  * Created by guydavidson on 23/02/2016.
  */
 
-function tag_graph(graphFile, linkLength, minNode, width, height) {
+var tagColorMap = {};
+var tagColorScale = d3.scale.category20();
+
+function tagColor(tag) {
+    var tagId = tag.id;
+
+    if (tagId in tagColorMap) {
+        return tagColorMap[tagId];
+    }
+
+    var color = tagColorScale(Math.floor((Math.random() * 20) + 1));
+    tagColorMap[tagId] = color;
+    return color;
+}
+
+var linkColorMap = {};
+var linkColorScale = d3.scale.category20b();
+
+function linkColor(link) {
+    var linkKey = link.source.id + link.target.id;
+
+    if (linkKey in linkColorMap) {
+        return linkColorMap[linkKey];
+    }
+
+    var color = linkColorScale(Math.floor((Math.random() * 20) + 1));
+    linkColorMap[linkKey] = color;
+    return color;
+}
+
+
+function tagGraph(graphFile, linkLength, minNode, width, height) {
     if (width == undefined) {
         width = $(document).width();
     }
@@ -10,8 +41,6 @@ function tag_graph(graphFile, linkLength, minNode, width, height) {
     if (height == undefined) {
         height = $(document).height();
     }
-
-    var color = d3.scale.category20();
 
     var force = cola.d3adaptor()
         // .linkDistance(function (d) {
@@ -77,7 +106,7 @@ function tag_graph(graphFile, linkLength, minNode, width, height) {
                  .data(edges)
                  .enter().append("line")
                  .attr("class", "link")
-                 .style("stroke", function(d) { return color(Math.floor((Math.random() * 20) + 1)); })
+                 .style("stroke", linkColor)
                  .style("stroke-width", function(d) { return d.submissions.length * 1.5; })
                  .on("mouseover", tip.show)
                  .on("mouseout", tip.hide);
@@ -90,7 +119,7 @@ function tag_graph(graphFile, linkLength, minNode, width, height) {
                 .append("circle")
                 .attr("class", "node")
                 .attr("r", function(d) { return Math.log(d.submissions.length) * 5; })
-                .style("fill", function(d) { return color(Math.floor((Math.random() * 20) + 1)); })
+                .style("fill", tagColor)
                 .on("mouseover", tip.show)
                 .on("mouseout", tip.hide)
                 .call(force.drag);
