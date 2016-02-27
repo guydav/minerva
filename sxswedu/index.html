@@ -12,13 +12,105 @@
       stroke-opacity: .6;
     }
 
-    .tags {
+    .segment {
         width: 80%;
         margin: auto;
+        font-family: Avenir;
+    }
+
+    .centerImage {
+        text-align: center;
+        display: block;
+        width: 50%;
+        margin: auto;
+        padding: 0px;
+    }
+
+    .text {
+
+    }
+
+    .buzzword {
+        width: 60%;
+        margin: auto;
+        height: 250px;
+        font-family: Avenir;
+        padding: 10px;
+    }
+    .buzzword .buzzImage {
+        width: 200px;
+        height: 200px;
+        padding: 10px;
+    }
+
+    .quote {
+        display: flex;
+        height: 75px;
+        padding: 0px;
+        justify-content: space-around;
+        align-items: center;
+        font-family: Avenir;
+    }
+
+    .quote .quoteText {
+        flex: 1;
+        padding: 5px;
+        align-items: center;
+        justify-content: center;
+        line-height: 100%;
+    }
+
+    .quote .quoteText .quoteName {
+        font-style: italic;
+    }
+
+    .quote .headshot {
+        width: 50px;
+        height: 50px;
+        align-items: center;
+        justify-content: center;
+    }
+
+    section {
+        display: block;
+        max-width: 500px;
+    }
+
+    #sixDegrees {
+        width: 80%;
+        margin: auto;
+        height: 400px;
+        display: flex;
+    }
+
+    #degreesImage {
+        width: auto;
+        height: 400px;
+        padding: 10px;
+        height: inherit;
+    }
+
+    #leftDegrees {
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-around;
+        align-items: center;
+    }
+
+    #rightDegrees {
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-around;
+        align-items: center;
     }
 
 
+
 </style>
+
+<head></head>
 <body>
     <link rel="stylesheet" href="d3.tip.css">
     <script src="//d3js.org/d3.v3.js" charset="utf-8"></script>
@@ -28,16 +120,180 @@
     <script src="d3.tip.js"></script>
     <script src="tag_graph.js"></script>
 
-    <div class="tags" id="submissions">
-        <h2>Submitted Proposals Tag Network Graph</h2>
-        <h3>showing all tags appearing ten times or more</h3>
-        <script>tagGraph("tag_network.json", 60, 10, null, 500);</script>
+    <div class="segment" id="heading">
+        <div class="text">
+            <h2>South by Southwest EDU & Minerva - Data Exploration - Mike, is this a good title?</h2>
+            <p>
+            For the last few weeks, SxSWedu has been working with a group of students from Minerva Schools at KGI to visualize the trends in education that this conference showcases. An innovative new four year degree program during which students live and study in seven world cities, Minerva is interested in this because we are at the forefront of innovation in higher education.
+            </p>
+            <p>
+            Our students were given a data set of all the program submissions made to SxSWedu, with descriptions and three tags. The three tags were chosen by the submitter to signify the salient features of their proposed talk or session. We analyzed the frequencies of single words, bigrams (two-word phrases), and trigrams (three-word phrases), and found the top one hundred combinations.
+            </p>
+        </div>
     </div>
 
-    <div class="tags" id="confirmed">
-        <h2>Confirmed Panels Tag Network Graph</h2>
-        <h3>showing all tags appearing five times or more</h3>
-        <script>tagGraph("confirmed_tag_network.json", 110, 5, null, 500);</script>
+    <div class="segment" id="trends">
+        <img src="assets/Buzzword_Heading.png" class="centerImage"/>
+        <div class="text">
+            <p>
+            The most common themes in these submissions were Higher Education, Design Thinking and 21st Century Skills. We asked students what they think is important about these three threads, and they had some interesting insights.
+            </p>
+        </div>
     </div>
+
+    <div class="buzzword">
+        <img src="assets/Buzzword_Higher_Education.png" class="buzzImage" style="float: left"/>
+        <div class="quote">
+            <div class="quoteText">
+                Higher education encompasses all learning opportunities beyond high school. Whether it be in liberal arts colleges, research universities, art schools or vocational colleges, higher education is of vital importance to the continuation of learning to a high level.
+            </div>
+        </div>
+        <div class="quote">
+            <div class="quoteText">
+                “How can higher education be designed to unlock people's potential, no matter what they've come from? That's what interests me.”
+                <div class="quoteName">Mandy Nguyen</div>
+            </div>
+            <img src="assets/headshots/Mandy.png" class="headshot"/>
+        </div>
+        <div class="quote">
+            <div class="quoteText">
+                “Is it ‘higher education’ really ‘higher’ than other forms of education? What makes this form of learning better than others?”
+                <div class="quoteName">Michael Yang</div>
+            </div>
+            <img src="assets/headshots/Michael.png" class="headshot"/>
+        </div>
+
+    </div>
+
+    <div class="buzzword">
+        <img src="assets/Buzzword_21st_Century_Skills.png" class="buzzImage" style="float: right;"/>
+        <div class="quote">
+            <div class="quoteText">
+                In the information age, it is important for students to be more than professional and skilled. Students need to be able to think critically and creatively, to deal with a flood of information, to be flexible and to be able to solve complex problems.
+            </div>
+        </div>
+        <div class="quote">
+            <img src="assets/headshots/Gwen.png" class="headshot"/>
+            <div class="quoteText">
+                “It is of vital importance for us to know what we need to know in order to thrive as a society in the future.”
+                <div class="quoteName">Gwen Yi Wong</div>
+            </div>
+        </div>
+        <div class="quote">
+            <img src="assets/headshots/Michael.png" class="headshot"/>
+            <div class="quoteText">
+                “What skills will humans need for when, for many jobs, humans need not apply?”
+                <div class="quoteName">Michael Yang</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="buzzword">
+        <img src="assets/Buzzword_Design_Thinking.png" class="buzzImage" style="float: left"/>
+        <div class="quote">
+            <div class="quoteText">
+                Design Thinking is an human-centered approach to innovation, in the intersection of human needs, technology and business. As learning becomes more personalized, Design Thinking becomes especially important.
+            </div>
+        </div>
+        <div class="quote">
+            <div class="quoteText">
+                “Design Thinking introduces a culture of risk taking, and encourages learners to embrace ambiguity. However, the term is often misused, and I am interested in how education can transform ‘design thinking’ into ‘design doing’.”
+                <div class="quoteName">Qiqi Xu</div>
+            </div>
+            <img src="assets/headshots/Qiqi.png" class="headshot"/>
+        </div>
+    </div>
+
+
+    <div class="segment" id="submissions">
+        <p>We isolated the most commonly occurring phrases in order to find the trends in submissions. To get an overview of the trends in education change this year, we looked at how the different tags connected to each other and created a tag network graph.</p>
+        <script>tagGraph("tag_network.json", 60, 10, null, 600);</script>
+    </div>
+
+    <div class="segment" id="sixDegreesIntro">
+        <p>
+            We also identified Six Degrees of Learning from our analysis of the tags. These degrees of learning are some of the central themes of education innovation at SxSWedu this year. We asked students to comment on what they believe are the most important aspects of these tags.
+        </p>
+    </div>
+
+    <div id="sixDegrees">
+        <div id="leftDegrees">
+            <div class="quote">
+                <img class="headshot" src="assets/headshots/Mandy.png"/>
+                <div class="quoteText">
+                    “How can schools be useful to those they are supposed to serve, the students? Teachers should be empowered to help solve the problems which face students today.”
+                    <div class="quoteName">Mandy Nguyen</div>
+                </div>
+            </div>
+            <div class="quote">
+                <img class="headshot" src="assets/headshots/Her.png"/>
+                <div class="quoteText">
+                    “Project based learning 'teaches' a mixture of collaboration, communication, goal setting, uncertainty, discovery, adaptability and many more fundamental skills for survival in any environment.”
+                    <div class="quoteName">JiaHer Teoh</div>
+                </div>
+            </div>
+            <div class="quote">
+                <img class="headshot" src="assets/headshots/Alberto.png"/>
+                <div class="quoteText">
+                    “I believe that learning must come from within, it is the student who must realize that they will get out of their education just as much as they put into it.”
+                    <div class="quoteName">Alberto Martinez de Arenaza</div>
+                </div>
+            </div>
+        </div>
+
+        <img id="degreesImage" src="assets/Six_Degrees.png"/>
+
+        <div id="rightDegrees">
+            <div class="quote">
+                <div class="quoteText">
+                    “At the center of education is the student. As such, the type of education I find most interesting is one that recognizes this and builds a system driven by student needs and interests.”
+                    <div class="quoteName">Tyler Pincus</div>
+                </div>
+                <img class="headshot" src="assets/headshots/Tyler.png"/>
+            </div>
+            <div class="quote">
+                <div class="quoteText">
+                    “While it is important that students be prepared for the world outside of school, perhaps it is more important that they are fulfilled, challenged and interested in the moment.”
+                    <div class="quoteName">Urmila Janardan</div>
+                </div>
+                <img class="headshot" src="assets/headshots/Urmila.png"/>
+            </div>
+            <div class="quote">
+                <div class="quoteText">
+                    "In a world saturated with different forms of media and information, all vying for our children's attention, why not use it empower them?"
+                    <div class="quoteName">Gwen Yi Wong</div>
+                </div>
+                <img class="headshot" src="assets/headshots/Gwen.png"/>
+            </div>
+        </div>
+    </div>
+
+    <div class="segment" id="confirmed">
+        <p>
+            Then, even more interestingly, we re-ran this process for the accepted submissions. We discovered that “Student Success”, “Personalized Learning” and “Virtual Reality” moved much further up the list of most common topics within session descriptions. This is very interesting because it shows that these topics fit in with the ethos of SxSWedu, and demonstrates the value of these ideas.
+        </p>
+        <p>
+            Similarly, the topic tags also shifted slightly. “Entrepreneurship”, “Personalized” and “Global” leaped up the list, and became some of the most talked about topics at the conference. In order to show the connections between the accepted submission tags, we designed a second tag network graph.
+        </p>
+        <script>tagGraph("confirmed_tag_network.json", 110, 5, null, 600);</script>
+    </div>
+
+    <div class="segment" id="studentVoices">
+        <img src="assets/Buzzword_Student_Headings.png" class="centerImage"/>
+        <p>
+            For us as students, this project has been really interesting as a way to learn about the conference, and to engage in some project based learning of our own. These data visualizations show the most central and exciting undercurrents in education right now. They demonstrate the dedication and interest of SxSWedu conference-goers, and indicate the changes you will inspire in Austin.
+        </p>
+        <p>
+            As students, we are honoured and excited to be a part of SxSWedu this year. We gathered some student voices. We asked students what they are looking forward to, what their aims for the conference are, and who they will try to meet. We look forward to meeting you all soon,
+        </p>
+        <p>
+            Guy Davidson, Rosie Foulger and QiQi Xu <br>
+            Minerva Schools at KGI
+        </p>
+        <img src="assets/Student_Voices.png" class="centerImage" style="width: 80%"/>
+
+
+    </div>
+
 
 </body>
