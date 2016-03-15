@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<style>
+    h1 {
+        text-align: center;
+        font-family: Avenir;
+    }
+
+    .node {
+      stroke: #fff;
+      stroke-width: 1.5px;
+    }
+
+    .link {
+      stroke: #999;
+      stroke-opacity: .6;
+    }
+</style>
+<head>
+    <meta charset="UTF-8">
+    <title>Students Sound Off on Trends for 2016 - Tag Network Graphs</title>
+</head>
+<body>
+    <link rel="stylesheet" href="http://guy.minerva.community/sxswedu/d3.tip.css">
+    <script src="//d3js.org/d3.v3.js" charset="utf-8"></script>
+    <script src="http://marvl.infotech.monash.edu/webcola/cola.v3.min.js"></script>
+    <script src="//code.jquery.com/jquery-1.12.0.min.js"></script>
+    <script src="//code.jquery.com/jquery-migrate-1.2.1.min.js"></script>
+    <script src="http://guy.minerva.community/sxswedu/d3.tip.js"></script>
+    <script src="http://guy.minerva.community/sxswedu/tag_graph.js"></script>
+    <a name="submissions"><h1>Submissions Tag Network Graph</h1></a>
+    <script>tagGraph("tag_network.json", 60, 10, null, 600);</script>
+    <a name="accepted"><h1>Accepted Sessions Tag Network Graph</h1></a>
+    <script>tagGraph("confirmed_tag_network.json", 110, 5, null, 650);</script>
+</body>
+</html>
