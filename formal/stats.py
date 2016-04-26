@@ -611,7 +611,7 @@ def histogram(series_name, all_data=DEFAULT_DATA):
     series = data_dict[name]
 
     plot.figure(figsize=(DEFAULT_HORIZONTAL_SIZE, DEFAULT_VERTICAL_SIZE), dpi=DEFAULT_DPI)
-    plot.hist([series], color=[LINE_COLORS[0]], alpha=0.75)
+        plot.hist([series], color=[LINE_COLORS[0]], alpha=0.75)
     series_mean = mean(series)
     series_stddev = standard_deviation(series)
     label = '{name}\n mean = {mean:.2e}\nstddev = {stddev:.2e}' \
