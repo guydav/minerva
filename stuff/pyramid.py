@@ -1,3 +1,6 @@
+#! /usr/local/bin/python
+
+
 OUR_NAMES = ['Guy', 'Eli', 'Margot', 'Guilherme', ]
 
 
@@ -27,6 +30,7 @@ def print_names(names):
         lines.append(' | '.join([prepared_name] * ratio))
 
     lines.insert(0, prepare_name('WELCOME TO PYRAMID'))
+    lines.insert(1, '')
 
     max_length = len(lines[-1])
     format_string = '{:^' + str(max_length) + '}'
