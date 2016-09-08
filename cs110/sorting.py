@@ -16,7 +16,7 @@ def compare_gt(input_list, a, b):
     return input_list[a] > input_list[b]
 
 
-@profile(sort='calls')
+@profile(sort='calls', immediate=True)
 def insertion_sort(input_list):
     list_length = len(input_list)
 
@@ -27,7 +27,32 @@ def insertion_sort(input_list):
                 input_list.insert(i, input_list.pop(j))
                 continue
 
-@profile(sort='calls')
+
+@profile(sort='calls', immediate=True)
+def shell_sort(input_list, step_size=None):
+    list_length = len(input_list)
+
+    if not step_size or step_size > (list_length * 0.5):
+        step_size = int(list_length * 0.5)
+
+    while step_size > 0:
+        for i in xrange(step_size):
+            # select the current sub-list to sort
+            current_sub_list = input_list[i::step_size]
+
+            # sort it
+            insertion_sort(current_sub_list)
+
+            # insert the elements back into the original list
+            input_list[i::step_size] = current_sub_list
+
+        if step_size == 1:
+            step_size = 0
+
+        else:
+            step_size = int(step_size * 0.5)
+
+@profile(sort='calls', immediate=True)
 def bubble_sort(input_list):
     done = False
     max_index = len(input_list) - 1
@@ -41,7 +66,7 @@ def bubble_sort(input_list):
                 done = False
 
 
-@profile(sort='calls')
+@profile(sort='calls', immediate=True)
 def selection_sort(input_list):
     list_length = len(input_list)
 
@@ -60,13 +85,13 @@ def main():
 
     # 1.2
     ints = [i for i in random.random_integers(0, 100, 100)]
-    print ints
+    # print ints
 
-    for sort_func in [insertion_sort, bubble_sort, selection_sort]:
+    for sort_func in [insertion_sort, shell_sort, bubble_sort, selection_sort]:
         ints_copy = ints[:]
         sort_func(ints_copy)
         print sort_func.func_name
-        print ints_copy
+        # print ints_copy
 
 
 if __name__ == '__main__':
