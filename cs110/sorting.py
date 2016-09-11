@@ -1,4 +1,4 @@
-from profilehooks import profile, timecall
+from profilehooks import profile
 from numpy import random
 
 
