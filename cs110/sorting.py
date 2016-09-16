@@ -6,10 +6,7 @@ def run_function(func, initial_size, num_outputs):
     return [func(initial_size * 2 ** i) for i in xrange(num_outputs)]
 
 
-def swap(input_list, a, b):
-    temp = input_list[a]
-    input_list[a] = input_list[b]
-    input_list[b] = temp
+
 
 
 def compare_gt(input_list, a, b):
