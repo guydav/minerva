@@ -6,11 +6,21 @@ def run_function(func, initial_size, num_outputs):
     return [func(initial_size * 2 ** i) for i in xrange(num_outputs)]
 
 
-
-
-
 def compare_gt(input_list, a, b):
     return input_list[a] > input_list[b]
+
+
+def swap(input_list, a, b):
+    """
+    Swapping two places in a list extracted to a function
+    :param input_list: the list to check in
+    :param a: the first index
+    :param b: the second index
+    :return: No return value; values in the list swapped places
+    """
+    temp = input_list[a]
+    input_list[a] = input_list[b]
+    input_list[b] = temp
 
 
 @profile(sort='calls', immediate=True)
