@@ -73,30 +73,32 @@ def incremental_max_subarray(new_list, previous_max_subarray):
     :return: the maximum subarray of the new list
     """
     previous_max, previous_left, previous_right = previous_max_subarray
-    list_length = len(new_list)
-    new_value = new_list[-1]
+    new_item_index = len(new_list) - 1
+    new_item_value = new_list[-1]
 
     # First case - the maximum subarray included the last day
     # all we need to do is see if adding the new last day helps it
     # This entire branch is O(1)
-    if previous_right == list_length - 1:
-        last_two_days_difference = new_value - new_list[-2]
-        if last_two_days_difference > 0:
-            return previous_max + last_two_days_difference, previous_left, previous_right + 1
+    if previous_right == new_item_index:
+        if new_item_value > 0:
+            return previous_max + new_item_value, previous_left, previous_right + 1
 
         return previous_max_subarray
 
     # Otherwise, the only way the new maximum subarray could be better is if it included the last day
-    # We also know that the minimum of the list must the last day or before it.
-    # If it is the last day, it cannot be part of a new maximum subarray, so we're done.
-    min_value = min(new_list)  # min is O(n)
-    if min_value == new_value:
-        return previous_max_subarray
+    # This branch is O(n) as it requires iterating through the entire list once
+    max_sum_with_new_value = new_item_value
+    current_sum = max_sum_with_new_value
+    max_sum_left_index = new_item_index
 
-    # Otherwise, we now check if the last day - the minimum value is the new maximum subarray
-    max_with_new_value = new_value - min_value
-    if max_with_new_value > previous_max:
-        return max_with_new_value, new_list.index(min_value), list_length - 1  # list.index() is O(n)
+    for index in xrange(new_item_index - 1, -1, -1):  # looping through the list once, O(n)
+        current_sum += new_list[index]
+        if current_sum > max_sum_with_new_value:
+            max_sum_with_new_value = current_sum
+            max_sum_left_index = index
+
+    if max_sum_with_new_value > previous_max:
+        return max_sum_with_new_value, max_sum_left_index, new_item_index
 
     return previous_max_subarray
 
@@ -110,8 +112,13 @@ def main():
     # print ints
     # print diffs
     # print brute_force(ints)
-    print ints
-    print divide_and_conquer(diffs)
+    print diffs
+    result = divide_and_conquer(diffs)
+    print result
+    diffs.append(7)
+    print diffs
+    new_result = incremental_max_subarray(diffs, result)
+    print new_result
 
     # Random testing
     # for i in xrange(100):
