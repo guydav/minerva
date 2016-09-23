@@ -124,8 +124,13 @@ def heappop(heap_list):
     :param heap_list: The min-heap to pop from
     :return: The previous smallest item in the heap
     """
+    # borrowed from python's implementation - cleanest way to deal with possible empty / almost empty lists
+    last_item = heap_list.pop()
+    if not heap_list:
+        return last_item
+
     min_key = heap_list[0]
-    heap_list[0] = heap_list.pop()
+    heap_list[0] = last_item
     min_heapify(heap_list, 0, len(heap_list))
     return min_key
 
