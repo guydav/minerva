@@ -103,22 +103,38 @@ def incremental_max_subarray(new_list, previous_max_subarray):
     return previous_max_subarray
 
 
-def main():
-    # 2.2
+def mssl(l,start,end):
+    l = l[start:]
+    best = cur = sum(l[:end-start])
+    starti = 0
+    curi = besti = 0
+    for ind, i in enumerate(l[end-start:]):
+        print 'eh'
+        if cur+i > 0:
+            cur += i
+        else: # reset start position
+            cur, curi = 0, ind+1
+        if cur > best:
+            starti, besti, best = curi, ind+1, cur
+    return starti, besti, best
 
+
+def main():
+    print mssl([1, 1, 1, -100, 10, -9, 100000], 0, 2)
+    # 3.1
     # One example
-    ints = [i for i in random.random_integers(-10, 10, 10)]
-    diffs = [ints[i] - ints[i - 1] for i in xrange(1, len(ints))]
-    # print ints
+    # ints = [i for i in random.random_integers(-10, 10, 10)]
+    # diffs = [ints[i] - ints[i - 1] for i in xrange(1, len(ints))]
+    # # print ints
+    # # print diffs
+    # # print brute_force(ints)
     # print diffs
-    # print brute_force(ints)
-    print diffs
-    result = divide_and_conquer(diffs)
-    print result
-    diffs.append(7)
-    print diffs
-    new_result = incremental_max_subarray(diffs, result)
-    print new_result
+    # result = divide_and_conquer(diffs)
+    # print result
+    # diffs.append(7)
+    # print diffs
+    # new_result = incremental_max_subarray(diffs, result)
+    # print new_result
 
     # Random testing
     # for i in xrange(100):
