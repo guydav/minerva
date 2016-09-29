@@ -155,7 +155,7 @@ def heappush(heap_list, key):
     :param key: The key to add to the min-heap
     :return: None, with the new list being inside the key
     """
-    heap_list.append(10 ** 10)  # a large number
+    heap_list.append(float("inf"))  # a large number
     heap_decrease_key(heap_list, len(heap_list) - 1, key)
 
 
