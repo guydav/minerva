@@ -22,6 +22,8 @@ def simulate_hiring(max_n=100, trials=10):
         results.append(average([hire_assistant(n) for _ in xrange(trials)]))
 
 
+
+
 def main():
     print simulate_hiring(10)
 

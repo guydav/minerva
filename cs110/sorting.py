@@ -104,27 +104,27 @@ def merge_sort(input_list, start=0, end=None):
     merge(input_list, start, mid, end)
 
 
-"""
-Merges the list from start to end, assumes the sublists
-[start, mid) and [mid, end) are sorted relative to each other
-
-# if left_index == mid:
-#     new_sub_list.append(input_list[right_index])
-#     right_index += 1
-#
-# elif right_index == end:
-#     new_sub_list.append(input_list[left_index])
-#     left_index += 1
-#
-# elif compare_gt(input_list, left_index, right_index):
-#     new_sub_list.append(input_list[right_index])
-#     right_index += 1
-#
-# else:
-#     new_sub_list.append(input_list[left_index])
-#     left_index += 1
-"""
 def merge(input_list, start, mid, end):
+    """
+    Merges the list from start to end, assumes the sublists
+    [start, mid) and [mid, end) are sorted relative to each other
+
+    # if left_index == mid:
+    #     new_sub_list.append(input_list[right_index])
+    #     right_index += 1
+    #
+    # elif right_index == end:
+    #     new_sub_list.append(input_list[left_index])
+    #     left_index += 1
+    #
+    # elif compare_gt(input_list, left_index, right_index):
+    #     new_sub_list.append(input_list[right_index])
+    #     right_index += 1
+    #
+    # else:
+    #     new_sub_list.append(input_list[left_index])
+    #     left_index += 1
+    """
     # print 'merge called, start={start}, mid={mid}, end={end}'.format(start=start, mid=mid, end=end)
 
     if start + 1 == end:
@@ -152,6 +152,7 @@ def merge(input_list, start, mid, end):
         input_list[start:end] = new_sub_list
 
     # print input_list
+
 
 def main():
     # 1.1
