@@ -154,6 +154,118 @@ def merge(input_list, start, mid, end):
     # print input_list
 
 
+def swap(input_list, a, b):
+    """
+    Swapping two places in a list extracted to a function
+    :param input_list: the list to check in
+    :param a: the first index
+    :param b: the second index
+    :return: No return value; values in the list swapped places
+    """
+    temp = input_list[a]
+    input_list[a] = input_list[b]
+    input_list[b] = temp
+
+
+def is_sorted(input_list):
+    """
+    Helper function to test if a list is already sorted
+    :param input_list: the list to test
+    :return: True if it is already sorted, false otherwise
+    """
+    return all(input_list[i] <= input_list[i + 1] for i in xrange(len(input_list) - 1))
+
+
+@profile(immediate=True)
+def clean_quicksort(input_list, start=0, end=None):
+    if end is None:
+        end = len(input_list)
+
+    pivot = end - 1
+
+    if start >= pivot:
+        return
+
+    i = start - 1
+    for j in xrange(start, pivot):
+        if input_list[j] < input_list[pivot]:
+            i += 1
+            swap(input_list, i, j)
+
+    i += 1
+    swap(input_list, i, pivot)
+    clean_quicksort(input_list, start, i)
+    clean_quicksort(input_list, i + 1, end)
+
+
+@profile(immediate=True)
+def optimized_quicksort(input_list, start=0, end=None):
+    if is_sorted(input_list) or len(input_list) == 1:
+        return
+
+    if end is None:
+        end = len(input_list)
+
+    frontier_quicksort(input_list, start, end)
+
+
+def frontier_quicksort(input_list, initial_start, initial_end):
+    frontier = [(initial_start, initial_end)]
+
+    while frontier:
+        start, end = frontier.pop()
+
+        pivot = end - 1
+
+        if start >= pivot:
+            continue
+
+        if start + 1 == pivot:
+            if input_list[start] > input_list[pivot]:
+                temp = input_list[start]
+                input_list[start] = input_list[pivot]
+                input_list[pivot] = temp
+
+            continue
+
+        i = start - 1
+        for j in xrange(start, pivot):
+            if input_list[j] < input_list[pivot]:
+                i += 1
+                temp = input_list[i]
+                input_list[i] = input_list[j]
+                input_list[j] = temp
+
+        i += 1
+        # swap(input_list, i, pivot)
+        temp = input_list[i]
+        input_list[i] = input_list[pivot]
+        input_list[pivot] = temp
+
+        # clean_quicksort(input_list, start, i)
+        # clean_quicksort(input_list, i + 1, end)
+        frontier.append((start, i))
+        frontier.append((i + 1, end))
+
+
+@profile(immediate=True)
+def all_bad_no_good_fib(n):
+    if n == 0 or n == 1:
+        return 1
+
+    return all_bad_no_good_fib(n - 1) + all_bad_no_good_fib(n - 2)
+
+@profile(immediate=True)
+def happy_fib(n):
+    if n == 0 or n == 1:
+        return 1
+
+    cache = [1, 1]
+    for i in xrange(2, n):
+        cache.append(cache[i - 1] + cache[i - 2])
+
+    return cache[n - 1] + cache[n - 2]
+
 def main():
     # 1.1
     # run_function(lambda x: [0] * x, 2, 20)
@@ -169,16 +281,40 @@ def main():
     #     # print ints_copy
 
     # 2.1
-    ints = [i for i in random.random_integers(0, 1000, 1000)]
-    # print ints
-    # merge_sort(ints)
-    # print ints
-    # print all(ints[i] <= ints[i + 1] for i in xrange(len(ints) - 1))
+    # ints = [i for i in random.random_integers(0, 1000, 1000)]
+    # # print ints
+    # # merge_sort(ints)
+    # # print ints
+    # # print all(ints[i] <= ints[i + 1] for i in xrange(len(ints) - 1))
+    #
+    # for sort_func in [insertion_sort, selection_sort, merge_sort]:
+    #     ints_copy = ints[:]
+    #     sort_func(ints_copy)
+    #     print sort_func.func_name, all(ints_copy[i] <= ints_copy[i + 1] for i in xrange(len(ints_copy) - 1))
 
-    for sort_func in [insertion_sort, selection_sort, merge_sort]:
-        ints_copy = ints[:]
-        sort_func(ints_copy)
-        print sort_func.func_name, all(ints_copy[i] <= ints_copy[i + 1] for i in xrange(len(ints_copy) - 1))
+    # 5.2
+    # ints = [i for i in random.random_integers(0, 100000, 100000)]
+    # ints = range(100)
+    # # print ints
+    # clean_quicksort(ints[:])
+    # optimized_quicksort(ints[:])
+
+
+    # Stress / random testing code:
+    # for i in xrange(100):
+    #     if 0 == (i % 10):
+    #         print i
+    #
+    #     ints = [i for i in random.random_integers(0, 1000, 1000)]
+    #     ints_copy = ints[:]
+    #     optimized_quicksort(ints_copy)
+    #
+    #     if not is_sorted(ints_copy):
+    #         print ints
+    #         print ints_copy
+
+    # print all_bad_no_good_fib(30)
+    print happy_fib(100)
 
 
 if __name__ == '__main__':
