@@ -1,5 +1,6 @@
 from profilehooks import profile
 from numpy import random
+from statistics import median_high
 
 
 def run_function(func, initial_size, num_outputs):
@@ -249,6 +250,59 @@ def frontier_quicksort(input_list, initial_start, initial_end):
 
 
 @profile(immediate=True)
+def optimized_quicksort_with_median(input_list, start=0, end=None):
+    if is_sorted(input_list) or len(input_list) == 1:
+        return
+
+    if end is None:
+        end = len(input_list)
+
+    frontier_quicksort_with_median(input_list, start, end)
+
+
+def frontier_quicksort_with_median(input_list, initial_start, initial_end):
+    frontier = [(initial_start, initial_end)]
+
+    while frontier:
+        start, end = frontier.pop()
+
+        pivot = end - 1
+
+        if start >= pivot:
+            continue
+
+        if start + 1 == pivot:
+            if input_list[start] > input_list[pivot]:
+                temp = input_list[start]
+                input_list[start] = input_list[pivot]
+                input_list[pivot] = temp
+
+            continue
+
+        med = median(input_list[start:end])
+        med_index = input_list[start:end].index(med)
+
+        i = start - 1
+        for j in xrange(start, end):
+            if input_list[j] < med:
+                i += 1
+                temp = input_list[i]
+                input_list[i] = input_list[j]
+                input_list[j] = temp
+
+        i += 1
+        # swap(input_list, i, pivot)
+        temp = input_list[i]
+        input_list[i] = input_list[med_index]
+        input_list[med_index] = temp
+
+        # clean_quicksort(input_list, start, i)
+        # clean_quicksort(input_list, i + 1, end)
+        frontier.append((start, i))
+        frontier.append((i + 1, end))
+
+
+@profile(immediate=True)
 def all_bad_no_good_fib(n):
     if n == 0 or n == 1:
         return 1
@@ -293,11 +347,12 @@ def main():
     #     print sort_func.func_name, all(ints_copy[i] <= ints_copy[i + 1] for i in xrange(len(ints_copy) - 1))
 
     # 5.2
-    # ints = [i for i in random.random_integers(0, 100000, 100000)]
+    ints = [i for i in random.random_integers(0, 100000, 100000)]
     # ints = range(100)
-    # # print ints
-    # clean_quicksort(ints[:])
-    # optimized_quicksort(ints[:])
+    # print ints
+    clean_quicksort(ints[:])
+    optimized_quicksort(ints[:])
+    optimized_quicksort_with_median(ints[:])
 
 
     # Stress / random testing code:
@@ -314,7 +369,7 @@ def main():
     #         print ints_copy
 
     # print all_bad_no_good_fib(30)
-    print happy_fib(100)
+    # print happy_fib(100)
 
 
 if __name__ == '__main__':
