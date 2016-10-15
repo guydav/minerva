@@ -56,9 +56,6 @@ if __name__ == '__main__':
             print k, qs
 
 
-
-
-
 @profile(immediate=True)
 def optimized_quicksort(input_list, start=0, end=None):
     if is_sorted(input_list) or len(input_list) == 1:
