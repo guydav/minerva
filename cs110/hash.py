@@ -217,9 +217,9 @@ class CuckooHash(object):
                 return True
 
         # if we reached here, none of the functions worked, we can try to shift
-        for k in xrange(current_keys):
+        for k in xrange(len(current_keys)):
             key = current_keys[k]
-            collision_item = self.table[item]
+            collision_item = self.table[key]
 
             for i in xrange(self.hash_used[key] + 1, len(self.hash_functions)):
                 new_key = self.hash_functions[i](collision_item)
@@ -247,7 +247,17 @@ class CuckooHash(object):
 
         return False
 
+    def __repr__(self):
+        return '{items}\n{used}'.format(items = self.table, used=self.hash_used)
+
+
+def main_7_2():
+    ch = CuckooHash(23, lambda x: x % 8, lambda x: (3 * x + 7) % 23)
+    for i in xrange(20):
+        print i, ch.insert(i)
+
+    print ch
+
 
 if __name__ == '__main__':
-    # main()
-    pass
+    main_7_2()
