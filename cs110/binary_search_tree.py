@@ -10,6 +10,7 @@ class Node:
         self.l_child = None
         self.r_child = None
         self.data = val
+        self.left_count = 0
 
     def __repr__(self):
         return '<{data}>'.format(data=self.data)
@@ -21,6 +22,7 @@ def insert(root, node):
 
     else:
         if root.data > node.data:
+            root.left_count += 1
             if root.l_child is None:
                 root.l_child = node
             else:
@@ -180,7 +182,7 @@ def print_tree(root, depth=0, is_right=None):
     else:
         symbol = '\\'
 
-    print '   ' * depth + ' {symbol} {data}'.format(symbol=symbol, data=root.data)
+    print '   ' * depth + ' {symbol} {data}({left})'.format(symbol=symbol, data=root.data, left=root.left_count)
 
     if root.l_child:
         print_tree(root.l_child, depth + 1, CHILD_ON_LEFT)
@@ -211,11 +213,11 @@ def find_duplicates(root):
     return False
 
 
-current = None
+g_current = None
 
 
 def integrity(root):
-    global current
+    global g_current
 
     if root is None:
         return
@@ -223,11 +225,11 @@ def integrity(root):
     if root.l_child:
         integrity(root.l_child)
 
-    if root.data < current:
+    if root.data < g_current:
         print root.data
         return False
 
-    current = root.data
+    g_current = root.data
 
     if root.r_child:
         integrity(root.r_child)
@@ -259,34 +261,155 @@ def main():
         root = delete(root, search(root, n))
         print_tree_plus(root)
 
-if __name__ == '__main__':
-    # for i in xrange(100):
-    #     main()
 
-    nums = range(20)
+g_counter = 0
+
+def in_order_walk(root):
+    global g_counter
+    if root.l_child is not None:
+        for node in in_order_walk(root.l_child):
+            yield node
+            g_counter += 1
+
+    yield root.data
+    g_counter += 1
+
+    if root.r_child is not None:
+        for node in in_order_walk(root.r_child):
+            yield node
+            g_counter += 1
+
+
+def duplicate(root):
+    last = None
+    for curr in in_order_walk(root):
+        if curr == last:
+            return True
+        last = curr
+    return False
+
+
+def valid(root):
+    last = None
+    for curr in in_order_walk(root):
+        if curr < last:
+            return False
+        last = curr
+    return True
+
+
+def test_valid_behavior():
+    nums = range(100)
     root = None
     random.shuffle(nums)
 
     for n in nums:
         root = insert(root, Node(n))
 
-    search(root, 0).l_child = Node(13)
-
-    print integrity(root)
-
-    # print find_duplicates(root)
-    #
-    # insert(root, Node(13))
-    # print find_duplicates(root)
+    print valid(root)
+    print g_counter
 
 
+def average_depth(root):
+    queue = [(root, 1)]
+    total_depth = 0.0
+    count = 0
+
+    while queue:
+        node, depth = queue.pop()
+
+        total_depth += depth
+        count += 1
+
+        if node.l_child:
+            queue.append((node.l_child, depth + 1))
+
+        if node.r_child:
+            queue.append((node.r_child, depth + 1))
+
+    return total_depth / count
 
 
+def max_height(root):
+    queue = [(root, 1)]
+    height = 0
+    max_height_nodes = []
+
+    while queue:
+        node, depth = queue.pop()
+
+        # can optimize as if there are children, this can't be the max depth, but whatever
+        if depth > height:
+            height = depth
+            max_height_nodes = [node]
+        elif depth == height:
+            max_height_nodes.append(node)
+
+        if node.l_child:
+            queue.append((node.l_child, depth + 1))
+
+        if node.r_child:
+            queue.append((node.r_child, depth + 1))
+
+    return height, max_height_nodes
 
 
+def select(root, k):
+    node = root
+    count = node.left_count
+
+    while count != k:
+        if count < k:
+            k -= (count + 1)
+            node = node.r_child
+
+        else:  # count > k
+            node = node.l_child
+
+        if node is None:
+            raise ValueError("Encountered None node, expected not to...")
+
+        count = node.left_count
+
+    return node
 
 
+def rank(root, value):
+    node = root
+    data = node.data
+    total_rank = 0
+
+    while data != value:
+        if data < value:
+            total_rank += node.left_count + 1
+            node = node.r_child
+
+        else:  # data > value
+            node = node.l_child
+
+        if node is None:
+            raise ValueError("Encountered None node, expected not to...")
+
+        data = node.data
+
+    return total_rank + node.left_count
 
 
+def test_select_and_rank():
+    nums = range(1000)
+    root = None
+    random.shuffle(nums)
+    nums = nums[:500]
 
+    for n in nums:
+        root = insert(root, Node(n))
+
+    # print_tree_plus(root)
+
+    for k in xrange(500):
+        if k != rank(root, select(root, k).data):
+            print k
+
+if __name__ == '__main__':
+    test_select_and_rank()
 
