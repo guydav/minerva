@@ -396,17 +396,17 @@ def rank(root, value):
 
 
 def test_select_and_rank():
-    nums = range(1000)
+    nums = range(40)
     root = None
     random.shuffle(nums)
-    nums = nums[:500]
+    nums = nums[:20]
 
     for n in nums:
         root = insert(root, Node(n))
 
-    # print_tree_plus(root)
+    print_tree_plus(root)
 
-    for k in xrange(500):
+    for k in xrange(20):
         if k != rank(root, select(root, k).data):
             print k
 
