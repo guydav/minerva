@@ -512,21 +512,23 @@ def empirical_false_positive_rate(n=None, p_false_positive=None,
     return false_positive_rate, insert_time
 
 
-def compressed_bloom_filter_test(sample_space=SAMPLE_SPACE, test_set_size=TEST_SET_SIZE):
+def compressed_bloom_filter_test(n, f, sample_space=SAMPLE_SPACE, test_set_size=TEST_SET_SIZE):
     """
     This is how I'll run my testing / optimization:
     1. For a given n and p, create a regular Bloom filter. It now also has m and k.
     2. Set z = m_bf (from the regular BloomFilter) => keep the same transmitted size.
-    3. Check increasing bit_p values (say, 0.55 to 0.95):
-        3.1 For each bit_p, calculate the m that would be required for it, and from there k
-        3.2 From those m and k we can calculate the theoretical (and empirical) p_false_positives.
-        3.3 And also m/n, z/n => the bits per element used (theoretical and empirical)
-        3.4 We can then run it and also time to see if it saves or loses time
-    4. We can then graph the curves of m/n, z/n, and time to pick optimal values
+    3. Check increasing sizes, m = m_bf * x, for x in [2, 12)L
+        3.1 For each m, calculate the requisite entropy H(p) = z / m, and from that
+            perform a lookup to receive an approximate value for p
+        3.2 Using m, n, and p, we can calculate f (false positive probability) and k
+        3.3 We can run a similar test to before, inserting a sample set and querying
+            over a test set, to find the empirical false positive rate
+        3.4 We can also time the insertion, to receive a measure of performance
+    4. We can then graph the different results
     """
-    sample_set = set(randint(0, sample_space, 10 ** 4))
+    sample_set = set(randint(0, sample_space, n))
     n = len(sample_set)
-    uncompressed_false_positive_p = 10 ** -3
+    uncompressed_false_positive_p = f
     bf = BloomFilter(n=n, false_positive_p=uncompressed_false_positive_p)
     uncompressed_k = bf.k
     uncompressed_m = bf.m
@@ -541,7 +543,7 @@ def compressed_bloom_filter_test(sample_space=SAMPLE_SPACE, test_set_size=TEST_S
         results = print_compression_test_info(cbf, sample_set, test_set_size)
         all_results[size_multiplier] = results
 
-    pickle.dump(all_results, open(COMPRESSED_RESULTS_SMALLER_FILE, 'w'))
+    pickle.dump(all_results, open(COMPRESSED_RESULTS_FILE, 'w'))
 
 
 def print_compression_test_info(bf, sample_set, test_set_size):
@@ -581,9 +583,9 @@ def print_compression_test_info(bf, sample_set, test_set_size):
 
 
 if __name__ == '__main__':
-    # compressed_bloom_filter_test(test_set_size=10 ** 6)
+    compressed_bloom_filter_test(10 ** 6, 10 ** -5, test_set_size=10 ** 7)
     # arithmetic_coding_test()
-    false_positive_rate_tests(FP_RATES, N_VALUES)
+    # false_positive_rate_tests(FP_RATES, N_VALUES)
     # test()
 
 
