@@ -92,7 +92,9 @@ class BloomFilter(object):
 
             self.m = m
             if false_positive_p is not None:
-                print 'It is meaningless to supply both m and p; ignoring the supplied p value...'
+                print 'It is meaningless to supply both m and p; ' \
+                      'ignoring the supplied p value...'
+                false_positive_p = None
 
         else:  # m is None
             if not(isinstance (false_positive_p, float) and (0 < false_positive_p < 1)):
@@ -233,7 +235,7 @@ class CountingBloomFilter(BloomFilter):
         overflow_occurred = True
         for key_bit in self._double_hash_values(item):
             counter_index = self._key_bit_to_index(key_bit)
-            counter = int(self.bits[counter_index:counter_index + self.counter_bits].to01(), 2)
+            counter = self._get_counter(counter_index)
 
             if self.max_counter == counter:
                 continue
@@ -252,6 +254,14 @@ class CountingBloomFilter(BloomFilter):
             self.bits[counter_index:counter_index + self.counter_bits] = bitarray(bin_counter)
 
         return overflow_occurred
+
+    def _get_counter(self, counter_index):
+        """
+        Retrieve a counter value from its index
+        :param counter_index: The index where the requisite counter starts
+        :return: The integer (base 10) value held in the counter
+        """
+        return int(self.bits[counter_index:counter_index + self.counter_bits].to01(), 2)
 
     def batch_insert(self, items, counts=None):
         """
@@ -287,7 +297,7 @@ class CountingBloomFilter(BloomFilter):
         underflow_occurred = True
         for key_bit in self._double_hash_values(item):
             counter_index = self._key_bit_to_index(key_bit)
-            counter = int(self.bits[counter_index:counter_index + self.counter_bits].to01(), 2)
+            counter = self._get_counter(counter_index)
 
             if 0 == counter:
                 continue
@@ -337,7 +347,7 @@ class CountingBloomFilter(BloomFilter):
         min_count = self.max_counter
         for key_bit in self._double_hash_values(item):
             counter_index = self._key_bit_to_index(key_bit)
-            counter = int(self.bits[counter_index:counter_index + self.counter_bits].to01(), 2)
+            counter = self._get_counter(counter_index)
 
             if counter < min_count:
                 min_count = counter
@@ -394,7 +404,10 @@ def find_value_before(target, values=SORTED_ENTROPY_KEYS):
     A binary search-like procedure, returning the value preceding
     a target from a sorted list of floats. This is as each an
     exact match is unlikely to be found, and for the purposes
-    used here, an underestimate is preferable to an overestimate.
+    used here, an underestimate is preferable to an overestimate,
+    as it would result in a smaller compressed size, rather than
+    a larger one.
+
     As it is a binary search, it runs in O(log (n)) time.
     :param target: The value to find a preceding value for
     :param values: The list to search in - implemented for the
@@ -408,7 +421,6 @@ def find_value_before(target, values=SORTED_ENTROPY_KEYS):
     if len(values) == index:
         return values[-1]
 
-    # TODO: explain why I would rather undershoot
     return values[index - 1]
 
 
@@ -583,7 +595,7 @@ def print_compression_test_info(bf, sample_set, test_set_size):
 
 
 if __name__ == '__main__':
-    compressed_bloom_filter_test(10 ** 6, 10 ** -5, test_set_size=10 ** 7)
+    compressed_bloom_filter_test(10 ** 5, 10 ** -5, test_set_size=10 ** 7)
     # arithmetic_coding_test()
     # false_positive_rate_tests(FP_RATES, N_VALUES)
     # test()

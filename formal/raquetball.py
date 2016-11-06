@@ -7,7 +7,7 @@ SERVE_WIN_PROBABILITY = 0.6
 OPPONENT_WIN_PROBABILITY = 0.5
 PLAY_TO = 21
 START_SERVE = True
-NUM_TRIALS = 10000
+NUM_TRIALS = 100000
 
 
 def single_game(p_serve=SERVE_WIN_PROBABILITY, p_opponent=OPPONENT_WIN_PROBABILITY, play_to=PLAY_TO,
@@ -47,7 +47,6 @@ def run_simulation():
 
 def build_table(p_win=SERVE_WIN_PROBABILITY, p_loss=OPPONENT_WIN_PROBABILITY, play_to=PLAY_TO,
                 start_serve=START_SERVE):
-
     result = []
     for r in xrange(play_to + 1):
         row = []
@@ -77,7 +76,7 @@ def build_table(p_win=SERVE_WIN_PROBABILITY, p_loss=OPPONENT_WIN_PROBABILITY, pl
 
         if row == 0:
             # first row, can only win to get here
-            p_current_win = result[row][col -1][True] * p_win
+            p_current_win = result[row][col - 1][True] * p_win
 
         elif col == 0:
             # first column, can only lose to get here
@@ -94,8 +93,8 @@ def build_table(p_win=SERVE_WIN_PROBABILITY, p_loss=OPPONENT_WIN_PROBABILITY, pl
 
         elif col == play_to:
             # last column, can only win to get here
-            p_current_win = result[row][col -1][True] * p_win
-            p_current_win += result[row][col -1][False] * p_loss
+            p_current_win = result[row][col - 1][True] * p_win
+            p_current_win += result[row][col - 1][False] * p_loss
 
         elif row == play_to:
             # last row, can only lose to get here
@@ -137,7 +136,6 @@ def print_table():
     header_row = ['***'] + range(22)
     print tabulate.tabulate(table_to_print, headers=header_row)
 
-
     total_win_p = sum([row[21][True] for row in table])
     total_loss_p = sum([col[False] for col in table[21]])
 
@@ -147,11 +145,9 @@ def print_table():
     print 'The overall loss probability is {p:.4f}'.format(p=(total_loss_p / (total_win_p + total_loss_p)))
 
 
-
 def main():
     run_simulation()
-    print_table()
-
+    # print_table()
 
 
 if __name__ == '__main__':
