@@ -510,9 +510,40 @@ def test_monotonous_subsequence():
     print_longest_monotonous_subsequence(x, transition_table, end_index)
 
 
+def is_palindrome(string):
+    cleaned = ''.join([c.lower() for c in string if c.isalnum()])
+
+    for i in xrange(len(cleaned) / 2):
+        print i, cleaned[i]
+        if cleaned[i] != cleaned[-1 * (i + 1)]:
+            return False
+
+    return True
+
+
+def test_is_palindrome():
+    strings = ["Huh?", "uncopyrightable", "I like driving a Toyota. Do you?",
+               "I hope you don't have aibohphobia!", "As I pee, sir, I see Pisa!",
+               '123321', '1234321', '123421']
+
+    for string in strings:
+        print string,
+        palindrome_subsequence(string)
+        print
+
+
+def palindrome_subsequence(string):
+    cleaned = ''.join([c.lower() for c in string if c.isalnum()])
+    reverse = cleaned[::-1]
+
+    c, b = bottom_up_longest_subsequence(cleaned, reverse)
+    print_longest_subsequence(b, cleaned, len(cleaned), len(cleaned))
+
+
 if __name__ == '__main__':
     # matrix_multiplication_testing()
     # test_currency_trading()
     # test_game_strategy()
     # test_longest_subsequence()
-    test_monotonous_subsequence()
+    # test_monotonous_subsequence()
+    test_is_palindrome()
