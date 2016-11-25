@@ -544,6 +544,6 @@ if __name__ == '__main__':
     # matrix_multiplication_testing()
     # test_currency_trading()
     # test_game_strategy()
-    # test_longest_subsequence()
+    test_longest_subsequence()
     # test_monotonous_subsequence()
-    test_is_palindrome()
+    # test_is_palindrome()

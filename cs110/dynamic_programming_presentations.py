@@ -83,7 +83,7 @@ def which_problem(email, seminar, problems):
 
 
 email = 'guy@minerva.kgi.edu'
-# print(which_problem(email, '12.1', ['directions', 'aquarium', 'baggage']))
+print(which_problem(email, '12.1', ['directions', 'aquarium', 'baggage']))
 
 # Aquarium:
 # -----------
@@ -207,6 +207,7 @@ def double_sided_bottom_up_aquarium(tanks, fish_costs):
 
         # Take the values for the previous indices, sort them by cost ascending
         previous_cache = cache[(l, r)].items()
+        # This could be optimized by keeping the previous cache sorted
         previous_cache.sort(key=lambda x: x[1])
 
         current_cache = {}
