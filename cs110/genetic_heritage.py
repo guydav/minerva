@@ -4,9 +4,6 @@ import tabulate
 import numpy
 from collections import defaultdict
 from itertools import permutations
-from tqdm import tqdm
-from timeit import timeit
-
 
 
 RAW_GENE_DATA = (
@@ -53,6 +50,7 @@ def cache_decorator(ignore_order=False):
     return cache_function
 
 
+@cache_decorator()
 def bottom_up_longest_subsequence(x, y):
     m = len(x)
     n = len(y)
@@ -106,11 +104,10 @@ def maximal_subsequence_length(x, y):
     return bottom_up_longest_subsequence(x, y)[0][len(x)][len(y)]
 
 
-@cache_decorator(ignore_order=True)
+@cache_decorator()
 def gene_resemblance(row_index, col_index, genes, resemblance_func, proportion=False, default=None):
-    # row_length = len(genes[row_index])
-    max_length = max(len(genes[row_index]), len(genes[col_index]))
-    result = max_length
+    row_length = len(genes[row_index])
+    result = row_length
     if default is not None:
         result = default
 
@@ -118,51 +115,53 @@ def gene_resemblance(row_index, col_index, genes, resemblance_func, proportion=F
         result = resemblance_func(genes[row_index], genes[col_index])
 
     if proportion:
-        result = float(result) / max_length
+        result = float(result) / row_length
 
     return result
 
 
-def print_subsequence_lengths_table(gene_data=RAW_GENE_DATA):
-    gene_indices, genes = zip(*gene_data)
-    table = [[row_gene] + [gene_resemblance(row_gene, col_gene, genes, longest_subsequence_length)
-                           for col_gene in gene_indices]
-             for row_gene in gene_indices]
-
+def print_table(table, gene_indices=range(7)):
     header = [""]
-    header.extend(gene_indices)
+    header.extend([str(i) for i in gene_indices])
     print tabulate.tabulate(table, header)
 
 
-def add_threshold_marker(value, thresholds):
+def add_threshold_marker(value, thresholds, larger=True):
     if thresholds is None:
-        return False
+        return value
 
     marker = ''
 
     for threshold_value, threshold_marker in thresholds:
-        if value >= threshold_value:
-            marker = threshold_marker
-            break
+        # TODO: think if there's an easy way to clean this up
+        if larger:
+            if value >= threshold_value:
+                marker = threshold_marker
+                break
+
+        else:
+            if value <= threshold_value:
+                marker = threshold_marker
+                break
 
     return '{value:.3f}{marker}'.format(value=value, marker=marker)
 
 
-def print_proportion_table_with_thresholds(gene_data=RAW_GENE_DATA, thresholds=None):
-    gene_indices, genes = zip(*gene_data)
-    table = [[row_gene] + [add_threshold_marker(
-        gene_resemblance(row_gene, col_gene, genes, longest_subsequence_length, proportion=True), thresholds)
-                            for col_gene in gene_indices]
+def generate_similarity_table(gene_indices, genes,
+                              distance_func=longest_subsequence_length,
+                              proportion=False, default=None, thresholds=None,
+                              threshold_larger=True):
+    table = [[row_gene] +
+             [add_threshold_marker(gene_resemblance(
+                 row_gene, col_gene, genes, distance_func, proportion, default), thresholds, threshold_larger)
+              for col_gene in gene_indices]
              for row_gene in gene_indices]
 
-    header = [""]
-    header.extend(gene_indices)
-    print tabulate.tabulate(table, header)
+    return table
 
 
-def greedy_relationship_inference(gene_data=RAW_GENE_DATA):
-    gene_indices, genes = zip(*gene_data)
-    table = [[gene_resemblance(row_gene, col_gene, genes, longest_subsequence_length, proportion=True)
+def greedy_relationship_inference(gene_indices, genes, distance_func=longest_subsequence_length, default=None):
+    table = [[gene_resemblance(row_gene, col_gene, genes, distance_func, default=default, proportion=True)
               for col_gene in gene_indices]
              for row_gene in gene_indices]
 
@@ -202,13 +201,14 @@ INS = 'insertions'
 SUB = 'substitions'
 
 
+@cache_decorator()
 def levenshtein_distance_with_tracking(source, target):
     """
     Adapted from https://en.wikipedia.org/wiki/Levenshtein_distance#Iterative_with_full_matrix
     This is an implementation of the Wagner–Fischer algorithm, but tracking which "editing decision"
     is made at each point in time, in order to provide estimates thereof
-    :param x: the first string
-    :param y: the second string
+    :param source: the source string
+    :param target: the target string
     :return:
     """
     m = len(source)
@@ -228,7 +228,7 @@ def levenshtein_distance_with_tracking(source, target):
 
     for j in xrange(1, n + 1):
         for i in xrange(1, m + 1):
-            current_sub_cost = source[i - 1] == target[j - 1]
+            current_sub_cost = source[i - 1] != target[j - 1]
 
             deletion_cost = edits[i - 1, j] + 1
             insertion_cost = edits[i, j - 1] + 1
@@ -254,60 +254,8 @@ def levenshtein_distance_with_tracking(source, target):
     return edits[m, n], decisions[m, n]
 
 
-def print_levenshtein_distances_table(gene_data=RAW_GENE_DATA):
-    gene_indices, genes = zip(*gene_data)
-    table = [[row_gene] + [gene_resemblance(row_gene, col_gene, genes,
-                                            lambda x,y: levenshtein_distance_with_tracking(x, y)[0], default=0)
-                           for col_gene in gene_indices]
-             for row_gene in gene_indices]
-
-    header = [""]
-    header.extend(gene_indices)
-    print tabulate.tabulate(table, header)
-
-
-def print_levenshtein_proportions_table(gene_data=RAW_GENE_DATA):
-    gene_indices, genes = zip(*gene_data)
-    table = [[row_gene] + [gene_resemblance(row_gene, col_gene, genes,
-                                            lambda x,y: levenshtein_distance_with_tracking(x, y)[0],
-                                            proportion=True, default=0)
-                           for col_gene in gene_indices]
-             for row_gene in gene_indices]
-
-    header = [""]
-    header.extend(gene_indices)
-    print tabulate.tabulate(table, header)
-
-
-def greedy_levenshtein_relationship_inference(gene_data=RAW_GENE_DATA):
-    gene_indices, genes = zip(*gene_data)
-    table = [[row_gene] + [gene_resemblance(row_gene, col_gene, genes,
-                                            lambda x, y: levenshtein_distance_with_tracking(x, y)[0],
-                                            default=0)
-                           for col_gene in gene_indices]
-             for row_gene in gene_indices]
-
-    # Although it's not mathematically correct, since all numbers are positive,
-    # it doesn't harm to average in the 0 for the self-self distance
-    used = set()
-    indices_set = set(gene_indices)
-
-    averages = [(numpy.average(table[index]), index) for index in gene_indices]
-    start = min(averages)[1]
-    used.add(start)
-    queue = [start]
-    results = {}
-
-    while queue and used != indices_set:
-        current = queue.pop(0)
-        children = [child[1] for child in
-                    sorted([(table[current][i], i) for i in gene_indices if i not in used])[:2]]
-        used.update(children)
-        results[current] = children
-        queue.extend(children)
-
-    recursively_print_tree(results, start)
-    return results, start
+def levenshtein_distance(source, target):
+    return levenshtein_distance_with_tracking(source, target)[0]
 
 
 def levenshtein_probability_inferences(inference_results, start, gene_data=RAW_GENE_DATA):
@@ -346,17 +294,16 @@ def levenshtein_probability_inferences(inference_results, start, gene_data=RAW_G
         )
 
 
-def brute_force_maximum_parsimony_tree(genes=RAW_GENE_DATA):
+def brute_force_maximum_parsimony_tree(distance_func, default=None, genes=RAW_GENE_DATA):
     gene_indices, genes = zip(*genes)
-    table = [[gene_resemblance(row_gene, col_gene, genes,
-                               lambda x, y: levenshtein_distance_with_tracking(x, y)[0], default=0)
+    table = [[gene_resemblance(row_gene, col_gene, genes, distance_func, default=default)
               for col_gene in gene_indices]
              for row_gene in gene_indices]
 
     min_cost = float('Inf')
     min_perm = None
 
-    for p in tqdm(permutations(gene_indices)):
+    for p in permutations(gene_indices):
         cost = sum([table[p[i]][p[2 * i + 1]] + table[p[i]][p[2 * i + 2]] for i in xrange(3)])
         if cost < min_cost:
             min_perm = p
@@ -364,18 +311,34 @@ def brute_force_maximum_parsimony_tree(genes=RAW_GENE_DATA):
 
     print min_cost, min_perm
 
+    min_perm_as_dict = {min_perm[i]: (min_perm[2 * i + 1], min_perm[2 * i + 2]) for i in xrange(3)}
+    return min_perm_as_dict, min_perm[0]
+
 
 def main():
-    # print_subsequence_lengths_table()
-    # print_proportion_table_with_thresholds(thresholds=((1.0, ''), (0.9, '**'), (0.8, '*'), ))
-    # results, start = greedy_relationship_inference()
-    # print_levenshtein_distances_table()
-    # print_levenshtein_proportions_table()
-    # results, start = greedy_levenshtein_relationship_inference()
-    # levenshtein_probability_inferences(results, start)
-    brute_force_maximum_parsimony_tree()
+    gene_indices, genes = zip(*RAW_GENE_DATA)
 
-#
-# if __name__ == '__main__':
-#     main()
+    print_table(generate_similarity_table(gene_indices, genes))
+    print_table(generate_similarity_table(gene_indices, genes, proportion=True,
+                                          thresholds=((1.0, ''), (0.9, '**'), (0.8, '*'),)))
+    results, start = greedy_relationship_inference(gene_indices, genes)
+
+    print_table(generate_similarity_table(gene_indices, genes, distance_func=levenshtein_distance, default=0))
+    print_table(generate_similarity_table(gene_indices, genes, distance_func=levenshtein_distance,
+                                          default=0, proportion=True,
+                                          thresholds=((0, ''), (0.15, '**'), (0.25, '*'),), threshold_larger=False))
+    results, start = greedy_relationship_inference(gene_indices, genes,
+                                                   distance_func=lambda x, y: -1 * levenshtein_distance(x, y),
+                                                   default=0)
+    levenshtein_probability_inferences(results, start)
+    levenshtein_mp_tree, levenshtein_mp_root = \
+        brute_force_maximum_parsimony_tree(levenshtein_distance, 0)
+    levenshtein_probability_inferences(levenshtein_mp_tree, levenshtein_mp_root)
+
+    lcs_mp_tree, lcs_root = \
+        brute_force_maximum_parsimony_tree(lambda x, y: -1 * longest_subsequence_length(x, y))
+
+
+if __name__ == '__main__':
+    main()
     # print timeit(main, number=1)
