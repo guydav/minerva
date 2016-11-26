@@ -6,6 +6,7 @@ from collections import defaultdict
 from itertools import permutations
 
 
+# The gene data from the assignment
 RAW_GENE_DATA = (
     (0, 'TCGCCAATATTATATTTTTGAAGGCGTAGCTAATGTGGATACTATGTAAGTCGCAAGCTCTGCCAAACAGGGCTAATGAACAAACACTATAATGAGGAC'),
     (1, 'TCGCAATATATCTTTTTGGAGAGCGTAGTATGTGGATATATCTCAAGTCGCAAGCTCTGCCGAAACAGGGCATGATTAAGGAATTACTACAATGAGGAAA'),
@@ -14,7 +15,18 @@ RAW_GENE_DATA = (
     (4, 'TGCGCAATATATCTTTTTTAGAGAGCGTAGTATTGGTATATTCCCAAGTCGGAAGCTGCTTAAATCACCATGATACATGGAATTACTACAATAGAGGAAA'),
     (5, 'TCGCAATATATCTTTTTGAGAGCGTAGTAATGTGGATATATCTAAGTCGCAAGCTCTGCCGAAACAGGGCATAATGAAGAAACACTATAATGAGGAAC'),
     (6, 'TGCGCAATATATCTTTTTTAGGAGAGCGTAGTATGTGGATATTCTCAAGTCGGAAGCTGCCTTAAACAGCGCATGATAAGGAATTACTACAATAGAGGAAA'))
+
+# The global cache used by the caching decotrator
 CACHE = defaultdict(dict)
+
+# Markers used for the tree-printing function
+CHILD_ON_LEFT = True
+CHILD_ON_RIGHT = False
+
+# Keys for the levenshtein distance editing decisions dictionaries
+DEL = 'deletions'
+INS = 'insertions'
+SUB = 'substitutions'
 
 
 def cache_decorator(ignore_order=False):
@@ -50,14 +62,20 @@ def cache_decorator(ignore_order=False):
     return cache_function
 
 
-@cache_decorator()
+@cache_decorator(ignore_order=True)
 def bottom_up_longest_subsequence(x, y):
+    """
+    Bottom-up implementation of the longest subsequence algorithm, adapted
+    from Cormen et al. (2009). This implementation is adapted to directly
+    return the longest subsequence length, rather than the table.
+    :param x: The first string to compare
+    :param y: The second string to compare
+    :return: The length of the longest mutual subsequence between x and y
+    """
     m = len(x)
     n = len(y)
 
     cache = numpy.zeros((m + 1, n + 1))
-    subsequences = numpy.chararray((m + 1, n + 1))
-    subsequences[:] = ''
 
     for i in xrange(1, m + 1):
         for j in xrange(1, n + 1):
@@ -66,46 +84,41 @@ def bottom_up_longest_subsequence(x, y):
 
             if x[i - 1] == y[j - 1]:
                 cache[i][j] = cache[i - 1][j - 1] + 1
-                subsequences[i][j] = '\\'
 
             elif up >= left:
                 cache[i][j] = up
-                subsequences[i][j] = '^'
-            else:
+
+            else:  # up < left
                 cache[i][j] = left
-                subsequences[i][j] = '<'
 
-    return cache, subsequences
-
-
-@cache_decorator(ignore_order=True)
-def longest_subsequence_length(x, y):
-    return bottom_up_longest_subsequence(x, y)[0][len(x)][len(y)]
-
-
-def print_longest_subsequence(b, x, i, j):
-    if 0 == i or 0 == j:
-        return
-
-    current = b[i][j]
-    if '\\' == current:
-        print_longest_subsequence(b, x, i - 1, j - 1)
-        print x[i - 1],
-
-    elif '^' == current:
-        print_longest_subsequence(b, x, i - 1, j)
-
-    # else:
-    print_longest_subsequence(b, x, i, j - 1)
-
-
-@cache_decorator(ignore_order=True)
-def maximal_subsequence_length(x, y):
-    return bottom_up_longest_subsequence(x, y)[0][len(x)][len(y)]
+    return cache[m][n]
 
 
 @cache_decorator()
-def gene_resemblance(row_index, col_index, genes, resemblance_func, proportion=False, default=None):
+def gene_resemblance(row_index, col_index, genes, resemblance_func,
+                     proportion=False, default=None):
+    """
+    A wrapper to handle resemblance comparison of two genes. Passing
+    in the indices and list itself to avoid a string comparison between
+    the same row and column, and allow for whomever is calling this
+    function to perform a full iteration over rows x cols.
+    :param row_index: The first (major) index in the genes list to compare
+    :param col_index: The second (minor) index in the genes list to compare
+    :param genes: The list of genes, as strings, to compare
+    :param resemblance_func: The function used to generate a numerical comparison
+        between the two genes. Must accept exactly two parameters, the two strings.
+    :param proportion: Whether or not the proportion, relative to the length of the
+        row (major) gene should be computed. If True, the output of the resemblance
+        function is divided by the length of the row gene
+    :param default: A default value to return when a gene is compared with itself.
+        Used to allow returning 0 for the edit distance between two genes. Defaults
+        to the length of the gene (for the longest subsequence case)
+    :return: A comparison between the genes:
+        - If the same indices, the default value, or the length of the longest gene
+        - If different indices, the output of the resemblance function
+        - If proportion is True, the output or default value is divided by
+            the length of the row gene.
+    """
     row_length = len(genes[row_index])
     result = row_length
     if default is not None:
@@ -120,50 +133,92 @@ def gene_resemblance(row_index, col_index, genes, resemblance_func, proportion=F
     return result
 
 
-def print_table(table, gene_indices=range(7)):
+def print_table(table, table_format='fancy_grid', gene_indices=range(7)):
+    """
+    Print a table, using tabulate.
+    :param table: The table of values to be printed - assumed to include neither row
+        nor column headings
+    :param table_format: A format for the table - defaults to tabulate's fancy grid,
+        used to also allow to generate LaTeX tables directly
+    :param gene_indices: The headings to be used for both rows and columns
+    :return: None; table printed to stdout
+    """
+    table_with_row_headings = [[gene_indices[i]] + table[i] for i in xrange(len(gene_indices))]
     header = [""]
     header.extend([str(i) for i in gene_indices])
-    print tabulate.tabulate(table, header)
+    print tabulate.tabulate(table_with_row_headings, header, tablefmt=table_format)
 
 
 def add_threshold_marker(value, thresholds, larger=True):
+    """
+    Add a marker if the value is below or above a certain threshold
+    :param value: The current value to annotate
+    :param thresholds: A list of tuples, each specifying a threshold and a marker for it
+    :param larger: Whether the markers should be applied if the value is larger than the
+        threshold, or smaller than it
+    :return: the value, annotated if it was necessary
+    """
     if thresholds is None:
         return value
 
     marker = ''
-
     for threshold_value, threshold_marker in thresholds:
-        # TODO: think if there's an easy way to clean this up
-        if larger:
-            if value >= threshold_value:
-                marker = threshold_marker
-                break
-
-        else:
-            if value <= threshold_value:
-                marker = threshold_marker
-                break
+        if (larger and value >= threshold_value) or (not larger and value <= threshold_value):
+            marker = threshold_marker
+            break
 
     return '{value:.3f}{marker}'.format(value=value, marker=marker)
 
 
 def generate_similarity_table(gene_indices, genes,
-                              distance_func=longest_subsequence_length,
+                              resemblance_func=bottom_up_longest_subsequence,
                               proportion=False, default=None, thresholds=None,
                               threshold_larger=True):
-    table = [[row_gene] +
-             [add_threshold_marker(gene_resemblance(
-                 row_gene, col_gene, genes, distance_func, proportion, default), thresholds, threshold_larger)
+    """
+    A wrapper function replacing several other functions I had before,
+    generating a similarity table between the genes supplied
+    :param gene_indices: The list of indices of genes
+    :param genes: The list of genes themselves
+    :param resemblance_func: The metric used to calculate resemblance between
+        two genes - defaults to `bottom_up_longest_subsequence`, levenshtein
+        distance is also implemented
+    :param proportion: True if the table should output proportions (relative
+        to the length of the row gene), False if it should output raw
+        resemblance metrics
+    :param default: A default value to be passed to `gene_resemblance`
+    :param thresholds: If exist, a set of thresholds to be used to annotate
+        the values output; see `add_threshold_marker`
+    :param threshold_larger: A flag passed to `add_threshold_marker`
+    :return: The generated table, without and row or column headers
+    """
+    table = [[add_threshold_marker(gene_resemblance(
+                 row_gene, col_gene, genes, resemblance_func, proportion, default), thresholds, threshold_larger)
               for col_gene in gene_indices]
              for row_gene in gene_indices]
 
     return table
 
 
-def greedy_relationship_inference(gene_indices, genes, distance_func=longest_subsequence_length, default=None):
-    table = [[gene_resemblance(row_gene, col_gene, genes, distance_func, default=default, proportion=True)
-              for col_gene in gene_indices]
-             for row_gene in gene_indices]
+def greedy_phylogeny_inference(gene_indices, genes,
+                               resemblance_func=bottom_up_longest_subsequence,
+                               proportion=True, default=None):
+    """
+    Attempt to infer relationships greedily - start from the value with the highest
+    average resemblance to the rest, pick the two most-resembling genes as its children,
+    and repeating this process to pick the grand-children.
+
+    Note: this assumes the highest value is best, as it was implemented with the longest
+     subsequence in mind. If using with levenshtein distance, multiply values by -1.
+    :param gene_indices: The indices of the different genes
+    :param genes: The gene strings themselves
+    :param resemblance_func: The resemblance metric to use - defaults to the
+        `bottom_up_longest_subsequence`, but the levenshtein distance is also
+        implemented
+    :param proportion: True if proportions should be used, False if raw values
+    :param default: A parameter passed to `generate_similarity_table`
+    :return:
+    """
+    table = generate_similarity_table(gene_indices, genes, resemblance_func, proportion, default)
 
     # Although it's not mathematically correct, since all numbers are positive,
     # it doesn't harm to average in the 1.0 for the self-self proportion
@@ -174,31 +229,72 @@ def greedy_relationship_inference(gene_indices, genes, distance_func=longest_sub
     start = max(averages)[1]
     used.add(start)
     queue = [start]
-    results = {}
+    results = [start]
 
     while queue and used != indices_set:
         current = queue.pop(0)
         children = [child[1] for child in
                     sorted([(table[current][i], i) for i in gene_indices if i not in used], reverse=True)[:2]]
         used.update(children)
-        results[current] = children
+        results.extend(children)
         queue.extend(children)
 
-    recursively_print_tree(results, start)
-    return results, start
+    print_tree(results)
+    return results
 
 
-def recursively_print_tree(results, start, depth=0):
-    # TODO: prettify this, or move to an actual tree, and print it even better
-    print '\t' * depth + str(start)
-    if start in results:
-        for child in results[start]:
-            recursively_print_tree(results, child, depth + 1)
+def left_child(i):
+    """
+    Return the left child of a node in a list-backed tree
+    :param i: the current index
+    :return: The index of the left child
+    """
+    return 2 * i + 1
 
 
-DEL = 'deletions'
-INS = 'insertions'
-SUB = 'substitions'
+def right_child(i):
+    """
+    Return the right child of a node in a list-backed tree
+    :param i: the current index
+    :return: the index of the right child
+    """
+    return 2 * i + 2
+
+
+def print_tree(tree_list, current=0, depth=0, is_right=None):
+    """
+    A hack of a printing function to print out a tree repesented in a list
+    :param tree_list: A list representing a tree, assuming that for a given
+        index, 2 * index + 1 / + 2 are its left and right children
+    :param current: The current index to print, defaults to 0 (the root)
+    :param depth: The current depth to print at
+    :param is_right: Are we on the right or left
+    :return:
+    """
+    if tree_list is None:
+        return
+
+    if depth > 10:
+        raise ValueError("Unable to comply, building in progress")
+
+    left_index = left_child(current)
+    right_index = right_child(current)
+    length = len(tree_list)
+
+    if right_index < length:
+        print_tree(tree_list, right_index, depth + 1, CHILD_ON_RIGHT)
+
+    if is_right is None:
+        symbol = '--'
+    elif is_right == CHILD_ON_RIGHT:
+        symbol = '/'
+    else:
+        symbol = '\\'
+
+    print '   ' * depth + ' {symbol} {data}'.format(symbol=symbol, data=tree_list[current])
+
+    if left_index < length:
+        print_tree(tree_list, left_index, depth + 1, CHILD_ON_LEFT)
 
 
 @cache_decorator()
@@ -206,10 +302,17 @@ def levenshtein_distance_with_tracking(source, target):
     """
     Adapted from https://en.wikipedia.org/wiki/Levenshtein_distance#Iterative_with_full_matrix
     This is an implementation of the Wagner–Fischer algorithm, but tracking which "editing decision"
-    is made at each point in time, in order to provide estimates thereof
+    is made at each point in time, in order to later provide estimates of how often each
+    editing decision was taken.
+
+    It is interesting to note that aside of the modifications I wrote in while tracking (which
+    could be reconstructed from the transition table, b, in the CLRS implementation of LCS),
+    the Levenshtein distance is almost the same as the difference in lengths between the
+    source string and the longest common subsequence it has with the target string.
     :param source: the source string
     :param target: the target string
-    :return:
+    :return: The minimal number of edits required to arrive form source to target,
+        and the dictionary of editing decisions rquired to arrive at that point
     """
     m = len(source)
     n = len(target)
@@ -254,23 +357,41 @@ def levenshtein_distance_with_tracking(source, target):
     return edits[m, n], decisions[m, n]
 
 
+@cache_decorator(ignore_order=True)
 def levenshtein_distance(source, target):
+    """
+    A wrapper for the `levenshtein_distance_with_tracking` function,
+    to provide only the editing distance. Since it's symmetric, we
+    can use the order-ignoring cache
+    :param source: The source string
+    :param target: The target string
+    :return: The number of edits required to go source -> target
+    """
     return levenshtein_distance_with_tracking(source, target)[0]
 
 
-def levenshtein_probability_inferences(inference_results, start, gene_data=RAW_GENE_DATA):
-    gene_indices, genes = zip(*gene_data)
-
-    queue = [start]
+def levenshtein_probability_inferences(inferred_phylogeny, genes):
+    """
+    An attempt to infer the probabilities of different editing decisions - insertion,
+    deletion, and substitution - form the inferred phylogeny
+    :param inferred_phylogeny: the phylogeny inferred, either greedly or exhaustingly,
+        as a list-backed binary tree
+    :param genes: The gene strings themselves
+    :return: None; probability inferences for the different changes printed to stdout
+    """
+    queue = [inferred_phylogeny[0]]
     total_start_length = 0
     total_edits = 0
     total_decisions = {DEL: 0, INS: 0, SUB: 0}
+
+    results_length = len(inferred_phylogeny)
 
     while queue:
         current = queue.pop(0)
         current_gene = genes[current]
 
-        children = inference_results[current]
+        children = (inferred_phylogeny[left_child(current)],
+                    inferred_phylogeny[right_child(current)])
 
         for child in children:
             total_start_length += len(current_gene)
@@ -281,11 +402,12 @@ def levenshtein_probability_inferences(inference_results, start, gene_data=RAW_G
             for key in total_decisions:
                 total_decisions[key] += decisions[key]
 
-            if child in inference_results:
+            # This check would fail if the tree wasn't full; but in this case we know it is
+            if right_child(child) < results_length:
                 queue.append(child)
 
     print 'Overall, encountered {edits} edits from a total starting length of {total}, P = {prob:.3f}'.format(
-        edits=total_edits, total=total_start_length, prob=float(total_edits)/total_start_length
+        edits=int(total_edits), total=total_start_length, prob=float(total_edits)/total_start_length
     )
     for key in total_decisions:
         dec = total_decisions[key]
@@ -294,49 +416,68 @@ def levenshtein_probability_inferences(inference_results, start, gene_data=RAW_G
         )
 
 
-def brute_force_maximum_parsimony_tree(distance_func, default=None, genes=RAW_GENE_DATA):
-    gene_indices, genes = zip(*genes)
-    table = [[gene_resemblance(row_gene, col_gene, genes, distance_func, default=default)
-              for col_gene in gene_indices]
-             for row_gene in gene_indices]
+def brute_force_maximum_parsimony_tree(gene_indices, genes, resemblance_func, default=None):
+    """
+    Since we have such a limited gene pool, a brute-force approach to a maximum parsimony
+    tree is feasible. We enumerate over permutations of the different gene indices, and
+    compute the cost they would incur, using the resemblance func. The cost is defined
+    as the cost from each parents to its children, so from the root to the two children,
+    and from each child to its two grandchildren.
+
+    In reality, we don't need to check all of of the n! permutations. Each fixing
+    of root, children, and two grand children per child, is actually counted eight times,
+    two different ordering for the grandchildren x 2 sides x two orderings of the children.
+    However, the asymptotic behavior behavior remains O(n!), which happens to be feasible
+    in this case and unfeasible in almost any real-world application.
+
+    :param gene_indices: The indices of the different genes
+    :param genes: The gene strings themselves
+    :param resemblance_func: The resemblance metric used to build the tree. As this was
+        written with parsimony in mind, the minimum is taken.
+    :param default: A parameter passed to the resemblance function.
+    :return: The permutation of the tree with incurred the minimal cost.
+    """
+    table = generate_similarity_table(gene_indices, genes, resemblance_func, default=default)
 
     min_cost = float('Inf')
     min_perm = None
 
     for p in permutations(gene_indices):
-        cost = sum([table[p[i]][p[2 * i + 1]] + table[p[i]][p[2 * i + 2]] for i in xrange(3)])
+        cost = sum([table[p[i]][p[left_child(i)]] + table[p[i]][p[right_child(i)]]
+                    for i in xrange(len(gene_indices)/2)])
         if cost < min_cost:
             min_perm = p
             min_cost = cost
 
     print min_cost, min_perm
 
-    min_perm_as_dict = {min_perm[i]: (min_perm[2 * i + 1], min_perm[2 * i + 2]) for i in xrange(3)}
-    return min_perm_as_dict, min_perm[0]
+    return min_perm
 
 
 def main():
     gene_indices, genes = zip(*RAW_GENE_DATA)
 
-    print_table(generate_similarity_table(gene_indices, genes))
+    print_table(generate_similarity_table(gene_indices, genes), table_format='latex')
     print_table(generate_similarity_table(gene_indices, genes, proportion=True,
-                                          thresholds=((1.0, ''), (0.9, '**'), (0.8, '*'),)))
-    results, start = greedy_relationship_inference(gene_indices, genes)
+                                          thresholds=((1.0, ''), (0.9, '**'), (0.8, '*'),)),
+                table_format='latex')
+    greedy_phylogeny_inference(gene_indices, genes)
 
-    print_table(generate_similarity_table(gene_indices, genes, distance_func=levenshtein_distance, default=0))
-    print_table(generate_similarity_table(gene_indices, genes, distance_func=levenshtein_distance,
+    print_table(generate_similarity_table(gene_indices, genes,
+                                          resemblance_func=levenshtein_distance, default=0),
+                table_format='latex')
+    print_table(generate_similarity_table(gene_indices, genes, resemblance_func=levenshtein_distance,
                                           default=0, proportion=True,
-                                          thresholds=((0, ''), (0.15, '**'), (0.25, '*'),), threshold_larger=False))
-    results, start = greedy_relationship_inference(gene_indices, genes,
-                                                   distance_func=lambda x, y: -1 * levenshtein_distance(x, y),
-                                                   default=0)
-    levenshtein_probability_inferences(results, start)
-    levenshtein_mp_tree, levenshtein_mp_root = \
-        brute_force_maximum_parsimony_tree(levenshtein_distance, 0)
-    levenshtein_probability_inferences(levenshtein_mp_tree, levenshtein_mp_root)
+                                          thresholds=((0, ''), (0.15, '**'), (0.25, '*'),), threshold_larger=False),
+                table_format='latex')
+    greedy_levenshtein_phylogeny = greedy_phylogeny_inference(
+        gene_indices, genes, resemblance_func=lambda x, y: -1 * levenshtein_distance(x, y), default=0)
+    levenshtein_probability_inferences(greedy_levenshtein_phylogeny, genes)
 
-    lcs_mp_tree, lcs_root = \
-        brute_force_maximum_parsimony_tree(lambda x, y: -1 * longest_subsequence_length(x, y))
+    levenshtein_mp_tree = brute_force_maximum_parsimony_tree(gene_indices, genes, levenshtein_distance, 0)
+    levenshtein_probability_inferences(levenshtein_mp_tree, genes)
+
+    brute_force_maximum_parsimony_tree(gene_indices, genes, lambda x, y: -1 * bottom_up_longest_subsequence(x, y))
 
 
 if __name__ == '__main__':
