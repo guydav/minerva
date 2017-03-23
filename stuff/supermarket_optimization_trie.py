@@ -1,10 +1,8 @@
 import argparse
-import collections
 import os
 import time
-import itertools
+import pygtrie
 import tqdm
-import bisect
 
 
 DATE_AND_TIME_FORMAT = '%Y_%m_%d_%H_%M_%S'
@@ -15,12 +13,13 @@ DEFAULT_OUTPUT_FILE_TEMPLATE = 'supermarket_optimizer_output_{time}.dat'
 class SupermarketOptimizer(object):
     def __init__(self, min_group_size):
         self.min_group_size = min_group_size
-        self.occurrence_table = collections.defaultdict(int)
-        self.groups_by_size = collections.defaultdict(list)
+        self.occurrence_trie = pygtrie.Trie()
 
     def process_input(self, input_file, assume_unsorted=False):
         """
-        TODO: document
+        Process an input file into the trie underlying the solution. Take each
+         row, parse it into a tuple of items, and insert them if they don't
+         exist, or increment their count if they do.
         :param input_file: an open Python file object, or any other iterable
             whose iteration returns strings representing transactions
         :param assume_unsorted: by default False, should we assume each line
@@ -29,7 +28,6 @@ class SupermarketOptimizer(object):
         """
         for line in input_file:
             group = line.strip().split(' ')
-            group_size = len(group)
 
             if len(group) < self.min_group_size:
                 continue
@@ -37,69 +35,88 @@ class SupermarketOptimizer(object):
             if assume_unsorted:
                 group = sorted(group)
 
-            group = tuple(group)
+            if group not in self.occurrence_trie:
+                self.occurrence_trie[group] = 1
 
-            self.occurrence_table[group] += 1
-            self.groups_by_size[group_size].append(group)
+            else:
+                self.occurrence_trie[group] += 1
 
-    def _output(self, group, group_count, output_file):
+    def _generate_diffusal_traversal_callback(self, group_set, group_count):
         """
-        TODO: document
-        :param group:
+        Generate a callback for a given group (represented as a set) to
+        traverse the trie with. Beyond the base case, of always traversing the
+        root of the trie, the traversal has two rules:
+            - If the group we are diffusing (since it did not have enough
+              support does not contain (formally: is not a super set) of the
+              current group in the traversal, stop traversin the current branch
+            - Otherwise, if the group has a value (we saw it in at least o
+        :param group_set:
         :param group_count:
-        :param output_file:
         :return:
         """
-        output = [str(len(group)), str(group_count)]
-        output.extend(group)
-        output_file.write(', '.join(output) + '\r\n')
+        def callback(path_conv, current_group, children,
+                     current_group_count=None):
+            # Root node - always continue traversing
+            if not current_group:
+                [None for _ in children]
 
-    def _break_down_group(self, group, group_count, sorted_group_lengths):
-        start_index = bisect.bisect_left(sorted_group_lengths, len(group)) - 1
+            # Group being diffused does not contain current group - no need
+            # to traverse farther
+            if not group_set.issuperset(current_group):
+                return
+
+            # Group exists as a node in the trie, meaning it is a group we've
+            # seen in the data - increase it by the count of the diffused group
+            if current_group_count is not None:
+                self.occurrence_trie[current_group] += group_count
+
+            # Continue traversing children of the current group, if any exist
+            [None for _ in children]
+
+        return callback
+
+    def _diffuse_group(self, group):
         group_set = set(group)
-
-        for subgroup_length in sorted_group_lengths[start_index::-1]:
-            for subgroup in self.groups_by_size[subgroup_length]:
-                subgroup_set = set(subgroup)
-
-                if subgroup_set.issubset(group_set):
-                    self.occurrence_table[subgroup] += group_count
-
-                    remainder_group = tuple(group_set.difference(subgroup_set))
-
-                    if len(remainder_group) < self.min_group_size:
-                        return
-
-                    if remainder_group in self.occurrence_table:
-                        self.occurrence_table[remainder_group] += group_count
-                    else:
-                        self._break_down_group(remainder_group, group_count,
-                                               sorted_group_lengths)
-
+        self.occurrence_trie.traverse(
+            self._generate_diffusal_traversal_callback(
+                group_set, self.occurrence_trie[group]))
 
     def find_supported_groups(self, support_level, output_file):
         """
         TODO: document
         :param support_level:
-        :param min_group_size:
         :param output_file:
         :return:
         """
-        sorted_group_lengths = list(sorted(self.groups_by_size.keys()))
+        groups_by_length = sorted(self.occurrence_trie.keys(),
+                                  key=len,
+                                  reverse=True)
 
-        for group_length in tqdm.tqdm(sorted_group_lengths[::-1]):
+        output = []
 
-            for group in self.groups_by_size[group_length]:
-                group_count = self.occurrence_table[group]
+        for group in tqdm.tqdm(groups_by_length):
+            if self.occurrence_trie[group] >= support_level:
+                output.append(group)
 
-                if group_count >= support_level:
-                    self._output(group, group_count, output_file)
+            else:
+                self._diffuse_group(group)
 
-                else:
-                    self._break_down_group(group, group_count,
-                                           sorted_group_lengths)
-
+        output_file.writelines([self._format_output(group) for group in output])
         output_file.flush()
+
+    def _format_output(self, group):
+        """
+        Output a group to the output file, in the format given:
+        <group size> <group count> <item 1> <item 2>... <item n>
+        :param group: The group to output, a tuple
+        :param group_count: The count it appeared in the transactions processed
+        :param output_file: The file (or file-like item, supporting a write
+            method
+        :return:
+        """
+        output = [str(len(group)), str(self.occurrence_trie[group])]
+        output.extend(group)
+        return ', '.join(output) + '\r\n'
 
 
 def generate_output_file_path():
