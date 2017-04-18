@@ -4,8 +4,8 @@ from functools import partial
 
 ONE_OVER_SQRT_TWO = 1.0 / (2 ** 0.5)
 COMPUTATIONAL_NAME = 'Computational'
-COMPUTATIONAL_VECTORS = (np.array((1, 0)),
-                         np.array((0, 1)))
+COMPUTATIONAL_VECTORS = (np.array((0, 1)),
+                         np.array((1, 0)))
 HADAMARD_NAME = 'Hadamard'
 HADAMARD_VECTORS = (np.array((ONE_OVER_SQRT_TWO, ONE_OVER_SQRT_TWO)),
                     np.array((ONE_OVER_SQRT_TWO, -1 * ONE_OVER_SQRT_TWO)))
@@ -136,7 +136,7 @@ def simulate_bb84(n=DEFAULT_NUM_BITS, eve=False, noise=ZERO_NOISE_LAMBDA):
     # match, or runs some statistical test to ascertain a probability of
     # eavesdropping
     indices, bits = alice.pick_test_bits()
-    print bob.test_bits(indices, bits)
+    return bob.test_bits(indices, bits)
 
     # If test is successful, the remaining bits (~n/4) are the OTP key
 
@@ -148,7 +148,7 @@ def generate_gaussian_noise(mu=DEFAULT_NOISE_MU,
 
 
 if __name__ == '__main__':
-    simulate_bb84()
-    simulate_bb84(eve=True)
-    simulate_bb84(noise=generate_gaussian_noise(sigma=0.05))
-    simulate_bb84(eve=True, noise=generate_gaussian_noise(sigma=0.05))
+    print simulate_bb84()
+    print simulate_bb84(eve=True)
+    print simulate_bb84(noise=generate_gaussian_noise(sigma=0.05))
+    print simulate_bb84(eve=True, noise=generate_gaussian_noise(sigma=0.05))

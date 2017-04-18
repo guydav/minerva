@@ -5,8 +5,8 @@ from functools import partial
 ONE_OVER_SQRT_TWO = 1.0 / (2 ** 0.5)
 DEFAULT_TANGLED_PAIR = np.array((ONE_OVER_SQRT_TWO, ONE_OVER_SQRT_TWO))
 DEFAULT_NUM_BITS = 2 ** 12
-COMPUTATIONAL_VECS = (np.matrix((1, 0)),
-                      np.matrix((0, 1)))
+COMPUTATIONAL_VECS = (np.matrix((0, 1)),
+                      np.matrix((1, 0)))
 TSIRELSON_CORRELATION_BOUND = -2 * (2 ** 0.5)
 DEFAULT_NOISE_MU = 0
 DEFAULT_NOISE_SIGMA = 0.05
