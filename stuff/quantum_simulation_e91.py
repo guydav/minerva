@@ -122,7 +122,7 @@ def correlation_test(alice, bob):
             current = results[a_base, b_base]
             current_total = sum(current.values())
             correlation = float(current[0, 0] + current[1, 1] -
-                           current[0, 1] - current[1, 0]) / current_total
+                                current[0, 1] - current[1, 0]) / current_total
 
             if a_base == alice.bases[2] and b_base == bob.bases[2]:
                 correlation *= -1
@@ -154,20 +154,19 @@ def generate_alice_bob(noise=ZERO_NOISE_LAMBDA):
     return alice, bob
 
 
-def e91(n=DEFAULT_NUM_BITS, eve_before_alice=False,
-        eve_before_bob=False, noise=ZERO_NOISE_LAMBDA):
+def simulate_e91(n=DEFAULT_NUM_BITS, eve_before_alice=False,
+                 eve_before_bob=False, eve_basis=None,
+                 noise=ZERO_NOISE_LAMBDA):
     alice, bob = generate_alice_bob(noise)
 
     qubits = [QubitPair(noise=noise) for _ in range(n)]
 
     if eve_before_alice:
-        eve_basis = QuantumBasis(COMPUTATIONAL_VECS, '0', noise=noise)
         [qubit.measure(eve_basis) for qubit in qubits]
 
     alice.measure_qubits(qubits)
 
     if eve_before_bob:
-        eve_basis = QuantumBasis(COMPUTATIONAL_VECS, '0', noise=noise)
         [qubit.measure(eve_basis, second=True) for qubit in qubits]
 
     bob.measure_qubits(qubits)
@@ -181,8 +180,33 @@ def generate_gaussian_noise(mu=DEFAULT_NOISE_MU,
 
 
 if __name__ == '__main__':
-    print e91()
-    print e91(eve_before_alice=True)
-    print e91(eve_before_bob=True)
-    print e91(noise=generate_gaussian_noise(sigma=0.05))
-    print e91(eve_before_alice=True, noise=generate_gaussian_noise(sigma=0.05))
+    print 'With and without noise:'
+    print simulate_e91()
+    print simulate_e91(noise=generate_gaussian_noise(sigma=0.10))
+
+    print 'Eve measuring before Alice in different bases:'
+    print simulate_e91(eve_before_alice=True,
+                       eve_basis=QuantumBasis(COMPUTATIONAL_VECS, '0'))
+    print simulate_e91(eve_before_alice=True,
+                       eve_basis=QuantumBasis(
+                           rot_basis(np.pi / 8, COMPUTATIONAL_VECS), 'PI / 8'))
+    print simulate_e91(eve_before_alice=True,
+                       eve_basis=QuantumBasis(
+                           rot_basis(np.pi / -8, COMPUTATIONAL_VECS), '-PI / 8'))
+    print simulate_e91(eve_before_alice=True,
+                       eve_basis=QuantumBasis(
+                           rot_basis(np.pi / 4, COMPUTATIONAL_VECS), 'PI / 4'))
+
+    print 'Eve measuring after Alice and before Bob in different bases:'
+    print simulate_e91(eve_before_bob=True,
+                       eve_basis=QuantumBasis(COMPUTATIONAL_VECS, '0'))
+    print simulate_e91(eve_before_bob=True,
+                       eve_basis=QuantumBasis(
+                           rot_basis(np.pi / 8, COMPUTATIONAL_VECS), 'PI / 8'))
+    print simulate_e91(eve_before_bob=True,
+                       eve_basis=
+                       QuantumBasis(rot_basis(np.pi / -8, COMPUTATIONAL_VECS),
+                                    '-PI / 8'))
+    print simulate_e91(eve_before_bob=True,
+                       eve_basis=QuantumBasis(
+                           rot_basis(np.pi / 4, COMPUTATIONAL_VECS), 'PI / 4'))
