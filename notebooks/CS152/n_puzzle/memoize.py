@@ -8,8 +8,9 @@ CACHE = defaultdict(dict)
 
 def memoize_heuristic(func):
     """
-    A decorator supporting caching of a heuristic function, accepting a state as an argument
-    Assumes the state parameter is a numpy.array
+    A decorator supporting caching of a heuristic function, 
+    accepting a state as an argument.
+    Assumes the state parameter should be a numpy.array
     :return: The same function, wrapped to cache
     """
     global CACHE
