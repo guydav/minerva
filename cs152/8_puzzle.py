@@ -167,7 +167,7 @@ def _print_solution(current, visited):
     print('=' * 40 + ' PRINTING SOLUTION ' + '=' * 40)
     for step in reversed(solution):
         print(str(step))
-        print(r'\/' * 7)
+        print(r'\/' * 6)
 
 
 def single_tile_manhattan_distance(state, value):
@@ -274,7 +274,7 @@ def solvePuzzle(n, initial_state, heuristic, print_solution=False,
             if print_solution:
                 _print_solution(current, visited)
 
-            return num_steps, max_frontier, 0
+            return num_steps, max_frontier, SUCCESS_CODE
 
         # current will always be in visited - but perhaps we found a better way to get to it
         tuple_state = current.state_to_tuple()
@@ -580,13 +580,13 @@ def run_test_boards(test_boards=TEST_BOARDS, heuristic_list=heuristics,
         timer = timeit.Timer(solve, 'gc.enable()')
         length, result = timer.timeit(number=1)
         print(result, '{length:.3f} seconds'.format(length=length))
-        results.append(result)
+        results.append((result, length))
 
     return results
 
 
 def pretty_print_results(results, test_boards=TEST_BOARDS, heuristic_list=heuristics):
-    textual_results = [', '.join([str(x) for x in r]) for r in results]
+    textual_results = [', '.join([str(x) for x in r] + ['{l:.3f}s'.format(l=l)]) for r, l in results]
 
     reshaped_results = np.array(textual_results).reshape((len(test_boards), len(heuristic_list)))
     headers = [heuristic.__name__.replace('memoized', '').replace('(', '').replace(')', '')
@@ -607,6 +607,10 @@ ROUJIAS_4_BY_4_BOARDS = (
 
 
 if __name__ == '__main__':
+    run_test_boards(TEST_BOARDS[1:],
+                    heuristic_list=[linear_conflict_heuristic],
+                    print_solution=True)
+
     # print('Regular A*:')
     # regular_results = run_test_boards()
     # pretty_print_results(regular_results)
@@ -615,8 +619,8 @@ if __name__ == '__main__':
     # id_results = run_test_boards(iterative_deepening=True, debug=False)
     # pretty_print_results(id_results)
 
-    four_by_four_results = run_test_boards(test_boards=ROUJIAS_4_BY_4_BOARDS,
-                                           heuristic_list=(linear_conflict_heuristic,))
-    pretty_print_results(four_by_four_results, test_boards=ROUJIAS_4_BY_4_BOARDS,
-                         heuristic_list=(linear_conflict_heuristic,))
-    
+    # four_by_four_results = run_test_boards(test_boards=ROUJIAS_4_BY_4_BOARDS,
+    #                                        heuristic_list=(linear_conflict_heuristic,))
+    # pretty_print_results(four_by_four_results, test_boards=ROUJIAS_4_BY_4_BOARDS,
+    #                      heuristic_list=(linear_conflict_heuristic,))
+    #
