@@ -6,9 +6,10 @@ import heapq
 
 
 class MinHeap(object):
-    def __init__(self, data=None):
+    def __init__(self, *data):
         if data is not None:
-            self.heap = heapq.heapify(data)
+            self.heap = list(data)
+            self.heapify()
 
         else:
             self.heap = []

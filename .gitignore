@@ -3,3 +3,4 @@
 *.csv
 *.xlsx
 */data/*
+cs156/analyze-spec-benchmarks/*
