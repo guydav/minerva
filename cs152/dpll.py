@@ -2,7 +2,8 @@ import numpy as np
 
 from tabulate import tabulate
 from cs152.heap import MinHeap  # OOP wrapper for Python's heapq I wrote at some point
-from functools import reduce
+from functools import reduce, total_ordering
+from collections import defaultdict
 from itertools import product, combinations
 import operator
 import timeit
@@ -12,6 +13,7 @@ from cs152 import memoize
 NEGATION_SYMBOLS = ('~', '￢', '-')
 
 
+@total_ordering
 class Literal:
     def __init__(self, name, sign=True):
         if name[0] in NEGATION_SYMBOLS:
@@ -36,6 +38,10 @@ class Literal:
             return False
 
         return self.name == other.name
+
+    def __le__(self, other):
+        # If need to sort, default to ordering by names
+        return self.name < other.name
 
 
 class UndecidableException(Exception):
@@ -76,7 +82,8 @@ FREE_OUTPUT = 'free'
 OUTPUT_MAPPING = {True: TRUE_OUTPUT, False: FALSE_OUTPUT}
 
 
-def DPLL_Satisfiable(knowledge_base):
+def DPLL_Satisfiable(knowledge_base, use_degree_heuristic=True,
+                     use_pure_symbol=True):
     """
     Implementation of the DPLL algorithm as defined by Russel and Norwig in figure 7.17
     :param knowledge_base: The knowledge base (or sentence) whose satisfiability we wish
@@ -86,7 +93,19 @@ def DPLL_Satisfiable(knowledge_base):
     """
     symbols = reduce(lambda x, y: x.union(y), knowledge_base, set())
     full_symbols_copy = symbols.copy()
-    satisfiable, model = DPLL(knowledge_base, symbols, {})
+
+    if use_degree_heuristic:
+        sums_and_symbols = [(np.sum([s in clause for clause in knowledge_base]), s)
+                            for s in symbols]
+        sums_and_symbols.sort()
+        symbols = [symbol for (symbol_sum, symbol) in sums_and_symbols]
+
+    # Convert KB to from list of sets to list of dicts
+    # each clause dict containing symbol: sign
+    # this is in many ways the same, but simplifies some work later on
+    knowledge_base = [{s: s.sign for s in clause} for clause in knowledge_base]
+    satisfiable, model = DPLL(knowledge_base, symbols, {}, use_pure_symbol)
+
     if satisfiable:
         output_model = {key: OUTPUT_MAPPING[val] for key, val in model.items()}
         for free_symbol in full_symbols_copy.difference(model.keys()):
@@ -100,7 +119,50 @@ def DPLL_Satisfiable(knowledge_base):
     return satisfiable, model
 
 
-def DPLL(clauses, symbols, model):
+def pure_symbol_heuristic(clauses, symbols):
+    """
+    Iterator-based solution inspired by
+    https://stackoverflow.com/questions/3844801/check-if-all-elements-in-a-list-are-identical
+    We iterate through symbols in reverse order, since they're sorted in ascending order
+    :return: The most recurring pure symbol
+    """
+    for symbol in reversed(symbols):
+        signs = [clause[symbol] for clause in clauses if symbol in clause]
+        iterator = iter(signs)
+        try:
+            first = next(iterator)
+        except StopIteration:
+            return symbol
+
+        if all(first == rest for rest in iterator):
+            return symbol
+
+    return None
+
+
+def unit_clause_heuristic(clauses, symbols, model):
+    clauses_copy = [clause.copy() for clause in clauses]
+
+    for symbol in model:
+        for clause_index in reversed(range(len(clauses_copy))):
+            clause = clauses_copy[clause_index]
+            if symbol not in clause:
+                continue
+
+            # Signs already match, this clause is true, ignore it
+            if model[symbol] == clause[symbol]:
+                del clauses_copy[clause_index]
+
+            else:
+                del clause[symbol]
+
+    # At this point, if we only filter to length-1 clauses
+    # they should each be a dict with a single key
+    unit_clauses = [clause for clause in clauses_copy if len(clause) == 1]
+    return unit_clauses
+
+
+def DPLL(clauses, symbols, model, use_pure_symbol=True, use_unit_clause=True):
     true_count = 0
     for clause in clauses:
         try:
@@ -114,6 +176,34 @@ def DPLL(clauses, symbols, model):
 
     if len(clauses) == true_count:
         return True, model
+
+    if use_pure_symbol:
+        pure_symbol = pure_symbol_heuristic(clauses, symbols)
+        if pure_symbol:
+            symbols.remove(pure_symbol)
+            model[pure_symbol] = pure_symbol.sign
+            return DPLL(clauses, symbols.copy(), model)
+
+    if use_unit_clause:
+        # find all current unit clauses using the heuristic
+        unit_clauses = unit_clause_heuristic(clauses, symbols, model)
+        if len(unit_clauses) > 0:
+            # create an update for each symbol, which is a set - if it's length 1,
+            # we're fine, and we update, if it's longer, we tried to update multuple
+            # values, and so we'll fail
+            unit_clauses_update = defaultdict(set)
+            [unit_clauses_update[symbol].add(clause[symbol])
+             for clause in unit_clauses for symbol in clause]
+
+            for symbol, value_set in unit_clauses_update.items():
+                # conflict - we tried to assign both false and true to same literal
+                if len(value_set) > 1:
+                    return False, None
+
+                symbols.remove(symbol)
+                model[symbol] = value_set.pop()
+
+            return DPLL(clauses, symbols.copy(), model)
 
     current = symbols.pop()
     model_false = model.copy()
