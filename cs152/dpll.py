@@ -1,13 +1,20 @@
 import numpy as np
-
-from tabulate import tabulate
-from cs152.heap import MinHeap  # OOP wrapper for Python's heapq I wrote at some point
 from functools import reduce, total_ordering
 from collections import defaultdict
-from itertools import product, combinations
-import operator
+from itertools import product
 import timeit
-from cs152 import memoize
+import tabulate
+
+
+timeit.template = """
+def inner(_it, _timer{init}):
+    {setup}
+    _t0 = _timer()
+    for _i in _it:
+        retval = {stmt}
+    _t1 = _timer()
+    return _t1 - _t0, retval
+"""
 
 
 NEGATION_SYMBOLS = ('~', '￢', '-')
@@ -43,11 +50,14 @@ class Literal:
         # If need to sort, default to ordering by names
         return self.name < other.name
 
+    def copy(self):
+        return Literal(self.name, self.sign)
+
 
 class UndecidableException(Exception):
     """
     A custom exception to handle the case of an evaluation being currently undeciable -
-     for example, because one of the variables was not offered a value
+     because one of the variables was not offered a value
     """
     pass
 
@@ -83,7 +93,7 @@ OUTPUT_MAPPING = {True: TRUE_OUTPUT, False: FALSE_OUTPUT}
 
 
 def DPLL_Satisfiable(knowledge_base, use_degree_heuristic=True,
-                     use_pure_symbol=True):
+                     use_pure_symbol=True, use_unit_clause=True):
     """
     Implementation of the DPLL algorithm as defined by Russel and Norwig in figure 7.17
     :param knowledge_base: The knowledge base (or sentence) whose satisfiability we wish
@@ -94,7 +104,7 @@ def DPLL_Satisfiable(knowledge_base, use_degree_heuristic=True,
     symbols = reduce(lambda x, y: x.union(y), knowledge_base, set())
     full_symbols_copy = symbols.copy()
 
-    if use_degree_heuristic:
+    if use_degree_heuristic or use_pure_symbol:
         sums_and_symbols = [(np.sum([s in clause for clause in knowledge_base]), s)
                             for s in symbols]
         sums_and_symbols.sort()
@@ -104,7 +114,8 @@ def DPLL_Satisfiable(knowledge_base, use_degree_heuristic=True,
     # each clause dict containing symbol: sign
     # this is in many ways the same, but simplifies some work later on
     knowledge_base = [{s: s.sign for s in clause} for clause in knowledge_base]
-    satisfiable, model = DPLL(knowledge_base, symbols, {}, use_pure_symbol)
+    satisfiable, model = DPLL(knowledge_base, symbols, {},
+                              use_pure_symbol, use_unit_clause)
 
     if satisfiable:
         output_model = {key: OUTPUT_MAPPING[val] for key, val in model.items()}
@@ -128,6 +139,9 @@ def pure_symbol_heuristic(clauses, symbols):
     """
     for symbol in reversed(symbols):
         signs = [clause[symbol] for clause in clauses if symbol in clause]
+        if len(signs) == 0:
+            continue
+
         iterator = iter(signs)
         try:
             first = next(iterator)
@@ -140,7 +154,7 @@ def pure_symbol_heuristic(clauses, symbols):
     return None
 
 
-def unit_clause_heuristic(clauses, symbols, model):
+def unit_clause_heuristic(clauses, model):
     clauses_copy = [clause.copy() for clause in clauses]
 
     for symbol in model:
@@ -182,15 +196,16 @@ def DPLL(clauses, symbols, model, use_pure_symbol=True, use_unit_clause=True):
         if pure_symbol:
             symbols.remove(pure_symbol)
             model[pure_symbol] = pure_symbol.sign
-            return DPLL(clauses, symbols.copy(), model)
+            return DPLL(clauses, symbols.copy(), model,
+                        use_pure_symbol, use_unit_clause)
 
     if use_unit_clause:
         # find all current unit clauses using the heuristic
-        unit_clauses = unit_clause_heuristic(clauses, symbols, model)
+        unit_clauses = unit_clause_heuristic(clauses, model)
         if len(unit_clauses) > 0:
             # create an update for each symbol, which is a set - if it's length 1,
-            # we're fine, and we update, if it's longer, we tried to update multuple
-            # values, and so we'll fail
+            # we're fine, and we update, if it's longer, we tried to update
+            # a literal to both true and false, and so we'll fail
             unit_clauses_update = defaultdict(set)
             [unit_clauses_update[symbol].add(clause[symbol])
              for clause in unit_clauses for symbol in clause]
@@ -203,23 +218,78 @@ def DPLL(clauses, symbols, model, use_pure_symbol=True, use_unit_clause=True):
                 symbols.remove(symbol)
                 model[symbol] = value_set.pop()
 
-            return DPLL(clauses, symbols.copy(), model)
+            return DPLL(clauses, symbols.copy(), model,
+                        use_pure_symbol, use_unit_clause)
 
+    # If we arrived at this point, pick a symbol at random
     current = symbols.pop()
     model_false = model.copy()
     model[current] = True
     model_false[current] = False
 
     # The or of tuples behaves in unfortunate ways, sadly
-    true_model_tv, true_model = DPLL(clauses, symbols.copy(), model)
-    if true_model_tv:
-        return true_model_tv, true_model
+    true_model_tv, true_model = DPLL(clauses, symbols.copy(), model,
+                                     use_pure_symbol, use_unit_clause)
+    false_model_tv, false_model = DPLL(clauses, symbols.copy(), model_false,
+                                       use_pure_symbol, use_unit_clause)
 
-    false_model_tv, false_model = DPLL(clauses, symbols.copy(), model_false)
-    if false_model_tv:
-        return false_model_tv, false_model
+    if true_model or false_model_tv:
+        return True, true_model if true_model_tv else false_model
 
     return False, None
+
+
+HEADERS = ('Degree H', 'Pure Symbol H', 'Unit Clause H', 'Time', 'Result', 'Avg. Free Symbol Count')
+
+
+def run_with_heuristic_combinations(knowledge_base, times=10):
+    results = []
+    for use_degree, use_pure, use_unit in product([False, True], repeat=3):
+        def dpll():
+            return DPLL_Satisfiable(knowledge_base, use_degree, use_pure, use_unit)
+
+        # intentionally not using timeit's number argument, since I want to average
+        # the number of free symbols left
+        total_time, total_free_symbols = 0, 0
+        for _ in range(times):
+            infer_time, (result, model) = timeit.timeit(dpll, number=times)
+            total_time += infer_time
+            if model:
+                total_free_symbols += sum(map(lambda v: v == FREE_OUTPUT, model.values()))
+
+        results.append((use_degree, use_pure, use_unit, total_time, result, total_free_symbols / times))
+
+    print(tabulate.tabulate(results, HEADERS, tablefmt='fancy_grid'))
+
+
+DEFAULT_KB_SIZE = 40
+DEFAULT_NUM_LITERALS = 20
+DEFAULT_LITERALS_IN_CLAUSE_MEAN = 4
+
+
+def generate_satisfiable_knowledge_base(should_flip=True, kb_size=DEFAULT_KB_SIZE,
+                                        num_literals=DEFAULT_NUM_LITERALS,
+                                        clause_mean=DEFAULT_LITERALS_IN_CLAUSE_MEAN):
+    """
+    It's actually fairly easy to generate a satisfiable knowledge base:
+    1) Create literals with random signs
+    2) Sample a random combination of them to be in a clause together.
+    These KBs are fairly naive, but they're guaranteed to be satisfiable.
+    And in fact, so long as at least one literal is kept in its original state,
+    we can flip some literals in each clause and remain satisfiable
+    """
+    literals = [Literal(str(i), np.random.random() > 0.5) for i in range(num_literals)]
+    knowledge_base = []
+    for _ in range(kb_size):
+        clause_size = max(np.random.binomial(num_literals, clause_mean / num_literals), 1)
+        clause = [l.copy() for l in np.random.choice(literals, clause_size, replace=False)]
+        if should_flip:
+            flip_count = np.random.randint(0, clause_size)  # half-open interval
+            [-l for l in np.random.choice(literals, flip_count, replace=False)]
+
+        knowledge_base.append(set(clause))
+
+    return knowledge_base
 
 
 if __name__ == '__main__':
@@ -285,4 +355,9 @@ if __name__ == '__main__':
 
     print(DPLL_Satisfiable(RN_7_20_KB))
 
+    run_with_heuristic_combinations(RN_7_20_KB)
+
+    run_with_heuristic_combinations(generate_satisfiable_knowledge_base(False), times=1)
+
+    run_with_heuristic_combinations(generate_satisfiable_knowledge_base(True), times=1)
 
