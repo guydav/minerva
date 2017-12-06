@@ -1,58 +1,71 @@
 
 % Enter your KB below this line:
 
-:- dynamic(known/3). 
+suggest(rest_0) :- neighborhood(gangnam), vegeterian(not_friendly), cuisine_type(japanese), alcohol(serves), take_away(not_offers), coffee(not_serves), pescaterian(friendly), open(early), price_range(w7500_15000).
+suggest(rest_1) :- neighborhood(gangnam), vegeterian(friendly), cuisine_type(korean), alcohol(not_serves), take_away(offers), coffee(not_serves), pescaterian(friendly), open(early), price_range(w5000_7500).
+suggest(rest_2) :- neighborhood(gangnam), vegeterian(not_friendly), cuisine_type(taiwanese), alcohol(serves), take_away(not_offers), coffee(not_serves), pescaterian(friendly), open(early), price_range(w15000_25000).
+suggest(rest_3) :- neighborhood(gangnam), vegeterian(not_friendly), cuisine_type(korean), alcohol(not_serves), take_away(offers), coffee(not_serves), pescaterian(not_friendly), open(late), price_range(w5000_7500).
+suggest(rest_4) :- neighborhood(gangnam), vegeterian(not_friendly), cuisine_type(korean), alcohol(serves), take_away(not_offers), coffee(not_serves), pescaterian(not_friendly), open(late), price_range(w7500_15000).
+suggest(rest_5) :- neighborhood(gangnam), vegeterian(friendly), cuisine_type(italian), alcohol(serves), take_away(not_offers), coffee(serves), pescaterian(friendly), open(late), price_range(w15000_25000).
+suggest(rest_6) :- neighborhood(gangnam), vegeterian(friendly), cuisine_type(korean), alcohol(not_serves), take_away(not_offers), coffee(serves), pescaterian(not_friendly), open(early), price_range(w7500_15000).
+suggest(rest_7) :- neighborhood(gangnam), vegeterian(friendly), cuisine_type(breakfast), alcohol(serves), take_away(not_offers), coffee(serves), pescaterian(friendly), open(late), price_range(w7500_15000).
+suggest(rest_8) :- neighborhood(gangnam), vegeterian(friendly), cuisine_type(vietnamese), alcohol(serves), take_away(not_offers), coffee(not_serves), pescaterian(not_friendly), open(w24/7), price_range(w7500_15000).
+suggest(rest_9) :- neighborhood(gangnam), vegeterian(friendly), cuisine_type(vietnamese), alcohol(serves), take_away(not_offers), coffee(not_serves), pescaterian(not_friendly), open(late), price_range(w7500_15000).
+suggest(rest_10) :- neighborhood(gangnam), vegeterian(not_friendly), cuisine_type(korean), alcohol(not_serves), take_away(not_offers), coffee(not_serves), pescaterian(not_friendly), open(early), price_range(w7500_15000).
+suggest(rest_11) :- neighborhood(gangnam), vegeterian(friendly), cuisine_type(japanese), alcohol(not_serves), take_away(offers), coffee(not_serves), pescaterian(not_friendly), open(w24/7), price_range(w5000_7500).
+suggest(rest_12) :- neighborhood(gangnam), vegeterian(not_friendly), cuisine_type(vietnamese), alcohol(not_serves), take_away(offers), coffee(not_serves), pescaterian(not_friendly), open(early), price_range(w5000_7500).
+suggest(rest_13) :- neighborhood(gangnam), vegeterian(friendly), cuisine_type(japanese), alcohol(serves), take_away(not_offers), coffee(not_serves), pescaterian(not_friendly), open(late), price_range(w25000+).
+suggest(rest_14) :- neighborhood(gangnam), vegeterian(not_friendly), cuisine_type(american), alcohol(serves), take_away(offers), coffee(serves), pescaterian(not_friendly), open(early), price_range(w7500_15000).
+suggest(rest_15) :- neighborhood(gangnam), vegeterian(friendly), cuisine_type(japanese), alcohol(serves), take_away(offers), coffee(not_serves), pescaterian(friendly), open(early), price_range(w7500_15000).
+suggest(rest_16) :- neighborhood(gangnam), vegeterian(friendly), cuisine_type(japanese), alcohol(not_serves), take_away(offers), coffee(not_serves), pescaterian(friendly), open(early), price_range(w7500_15000).
+suggest(rest_17) :- neighborhood(gangnam), vegeterian(friendly), cuisine_type(american), alcohol(not_serves), take_away(offers), coffee(serves), pescaterian(friendly), open(w24/7), price_range(w7500_15000).
+suggest(rest_18) :- neighborhood(gangnam), vegeterian(not_friendly), cuisine_type(american), alcohol(not_serves), take_away(offers), coffee(serves), pescaterian(friendly), open(w24/7), price_range(w7500_15000).
+suggest(rest_19) :- neighborhood(gangnam), vegeterian(not_friendly), cuisine_type(korean), alcohol(serves), take_away(offers), coffee(not_serves), pescaterian(not_friendly), open(early), price_range(w7500_15000).
+suggest(rest_20) :- neighborhood(gangnam), vegeterian(friendly), cuisine_type(chinese), alcohol(serves), take_away(offers), coffee(not_serves), pescaterian(friendly), open(early), price_range(w7500_15000).
+suggest(rest_21) :- neighborhood(gangnam), vegeterian(not_friendly), cuisine_type(korean), alcohol(serves), take_away(offers), coffee(not_serves), pescaterian(friendly), open(late), price_range(w7500_15000).
+suggest(rest_22) :- neighborhood(gangnam), vegeterian(not_friendly), cuisine_type(korean), alcohol(serves), take_away(not_offers), coffee(not_serves), pescaterian(not_friendly), open(w24/7), price_range(w7500_15000).
+suggest(rest_23) :- neighborhood(itaewon), vegeterian(not_friendly), cuisine_type(turkish), alcohol(not_serves), take_away(offers), coffee(not_serves), pescaterian(not_friendly), open(early), price_range(w5000_7500).
+suggest(rest_24) :- neighborhood(gangnam), vegeterian(friendly), cuisine_type(american), alcohol(not_serves), take_away(offers), coffee(serves), pescaterian(friendly), open(late), price_range(w15000_25000).
+suggest(rest_25) :- neighborhood(gangnam), vegeterian(not_friendly), cuisine_type(korean), alcohol(serves), take_away(not_offers), coffee(not_serves), pescaterian(not_friendly), open(early), price_range(w7500_15000).
+suggest(rest_26) :- neighborhood(gangnam), vegeterian(friendly), cuisine_type(korean), alcohol(serves), take_away(offers), coffee(not_serves), pescaterian(friendly), open(w24/7), price_range(w5000_7500).
+suggest(rest_27) :- neighborhood(gangnam), vegeterian(friendly), cuisine_type(japanese), alcohol(not_serves), take_away(offers), coffee(not_serves), pescaterian(friendly), open(early), price_range(w7500_15000).
 
-suggest(rest_0) :- neighborhood(gangnam), not(vegeterian(friendly)), cuisine_type(japanese), alcohol(served), not(take_away(offered)), not(coffee(served)), pescaterian(friendly), open(early), price_range(w7500_15000).
-suggest(rest_1) :- neighborhood(gangnam), vegeterian(friendly), cuisine_type(korean), not(alcohol(served)), take_away(offered), not(coffee(served)), pescaterian(friendly), open(early), price_range(w5000_7500).
-suggest(rest_2) :- neighborhood(gangnam), not(vegeterian(friendly)), cuisine_type(taiwanese), alcohol(served), not(take_away(offered)), not(coffee(served)), pescaterian(friendly), open(early), price_range(w15000_25000).
-suggest(rest_3) :- neighborhood(gangnam), not(vegeterian(friendly)), cuisine_type(korean), not(alcohol(served)), take_away(offered), not(coffee(served)), not(pescaterian(friendly)), open(late), price_range(w5000_7500).
-suggest(rest_4) :- neighborhood(gangnam), not(vegeterian(friendly)), cuisine_type(korean), alcohol(served), not(take_away(offered)), not(coffee(served)), not(pescaterian(friendly)), open(late), price_range(w7500_15000).
-suggest(rest_5) :- neighborhood(gangnam), vegeterian(friendly), cuisine_type(italian), alcohol(served), not(take_away(offered)), coffee(served), pescaterian(friendly), open(late), price_range(w15000_25000).
-suggest(rest_6) :- neighborhood(gangnam), vegeterian(friendly), cuisine_type(korean), not(alcohol(served)), not(take_away(offered)), coffee(served), not(pescaterian(friendly)), open(early), price_range(w7500_15000).
-suggest(rest_7) :- neighborhood(gangnam), vegeterian(friendly), cuisine_type(breakfast), alcohol(served), not(take_away(offered)), coffee(served), pescaterian(friendly), open(late), price_range(w7500_15000).
-suggest(rest_8) :- neighborhood(gangnam), vegeterian(friendly), cuisine_type(vietnamese), alcohol(served), not(take_away(offered)), not(coffee(served)), not(pescaterian(friendly)), open(w24/7), price_range(w7500_15000).
-suggest(rest_9) :- neighborhood(gangnam), vegeterian(friendly), cuisine_type(vietnamese), alcohol(served), not(take_away(offered)), not(coffee(served)), not(pescaterian(friendly)), open(late), price_range(w7500_15000).
-suggest(rest_10) :- neighborhood(gangnam), not(vegeterian(friendly)), cuisine_type(korean), not(alcohol(served)), not(take_away(offered)), not(coffee(served)), not(pescaterian(friendly)), open(early), price_range(w7500_15000).
-suggest(rest_11) :- neighborhood(gangnam), vegeterian(friendly), cuisine_type(japanese), not(alcohol(served)), take_away(offered), not(coffee(served)), not(pescaterian(friendly)), open(w24/7), price_range(w5000_7500).
-suggest(rest_12) :- neighborhood(gangnam), not(vegeterian(friendly)), cuisine_type(vietnamese), not(alcohol(served)), take_away(offered), not(coffee(served)), not(pescaterian(friendly)), open(early), price_range(w5000_7500).
-suggest(rest_13) :- neighborhood(gangnam), vegeterian(friendly), cuisine_type(japanese), alcohol(served), not(take_away(offered)), not(coffee(served)), not(pescaterian(friendly)), open(late), price_range(w25000+).
-suggest(rest_14) :- neighborhood(gangnam), not(vegeterian(friendly)), cuisine_type(american), alcohol(served), take_away(offered), coffee(served), not(pescaterian(friendly)), open(early), price_range(w7500_15000).
-suggest(rest_15) :- neighborhood(gangnam), vegeterian(friendly), cuisine_type(japanese), alcohol(served), take_away(offered), not(coffee(served)), pescaterian(friendly), open(early), price_range(w7500_15000).
-suggest(rest_16) :- neighborhood(gangnam), vegeterian(friendly), cuisine_type(japanese), not(alcohol(served)), take_away(offered), not(coffee(served)), pescaterian(friendly), open(early), price_range(w7500_15000).
-suggest(rest_17) :- neighborhood(gangnam), vegeterian(friendly), cuisine_type(american), not(alcohol(served)), take_away(offered), coffee(served), pescaterian(friendly), open(w24/7), price_range(w7500_15000).
-suggest(rest_18) :- neighborhood(gangnam), not(vegeterian(friendly)), cuisine_type(american), not(alcohol(served)), take_away(offered), coffee(served), pescaterian(friendly), open(w24/7), price_range(w7500_15000).
-suggest(rest_19) :- neighborhood(gangnam), not(vegeterian(friendly)), cuisine_type(korean), alcohol(served), take_away(offered), not(coffee(served)), not(pescaterian(friendly)), open(early), price_range(w7500_15000).
-suggest(rest_20) :- neighborhood(gangnam), vegeterian(friendly), cuisine_type(chinese), alcohol(served), take_away(offered), not(coffee(served)), pescaterian(friendly), open(early), price_range(w7500_15000).
-suggest(rest_21) :- neighborhood(gangnam), not(vegeterian(friendly)), cuisine_type(korean), alcohol(served), take_away(offered), not(coffee(served)), pescaterian(friendly), open(late), price_range(w7500_15000).
-suggest(rest_22) :- neighborhood(gangnam), not(vegeterian(friendly)), cuisine_type(korean), alcohol(served), not(take_away(offered)), not(coffee(served)), not(pescaterian(friendly)), open(w24/7), price_range(w7500_15000).
-suggest(rest_23) :- neighborhood(itaewon), not(vegeterian(friendly)), cuisine_type(turkish), not(alcohol(served)), take_away(offered), not(coffee(served)), not(pescaterian(friendly)), open(early), price_range(w5000_7500).
-suggest(rest_24) :- neighborhood(gangnam), vegeterian(friendly), cuisine_type(american), not(alcohol(served)), take_away(offered), coffee(served), pescaterian(friendly), open(late), price_range(w15000_25000).
-suggest(rest_25) :- neighborhood(gangnam), not(vegeterian(friendly)), cuisine_type(korean), alcohol(served), not(take_away(offered)), not(coffee(served)), not(pescaterian(friendly)), open(early), price_range(w7500_15000).
-suggest(rest_26) :- neighborhood(gangnam), vegeterian(friendly), cuisine_type(korean), alcohol(served), take_away(offered), not(coffee(served)), pescaterian(friendly), open(w24/7), price_range(w5000_7500).
-suggest(rest_27) :- neighborhood(gangnam), vegeterian(friendly), cuisine_type(japanese), not(alcohol(served)), take_away(offered), not(coffee(served)), pescaterian(friendly), open(early), price_range(w7500_15000).
+neighborhood(X) :- check(neighborhood, X).
+vegeterian(X) :- check(vegeterian, X).
+cuisine_type(X) :- check(cuisine_type, X).
+alcohol(X) :- check(alcohol, X).
+take_away(X) :- check(take_away, X).
+coffee(X) :- check(coffee, X).
+pescaterian(X) :- check(pescaterian, X).
+open(X) :- check(open, X).
+price_range(X) :- check(price_range, X).
 
-neighborhood(X) :- ask(neighborhood, X).
-vegeterian(X) :- ask(vegeterian, X).
-cuisine_type(X) :- ask(cuisine_type, X).
-alcohol(X) :- ask(alcohol, X).
-take_away(X) :- ask(take_away, X).
-coffee(X) :- ask(coffee, X).
-pescaterian(X) :- ask(pescaterian, X).
-open(X) :- ask(open, X).
-price_range(X) :- ask(price_range, X).
+multivalued(neighborhood).
+multivalued(cuisine_type).
+multivalued(price_range).
+multivalued(open).
+neighborhood(X) :- check(neighborhood, X).
+vegeterian(X) :- check(vegeterian, X).
+cuisine_type(X) :- check(cuisine_type, X).
+alcohol(X) :- check(alcohol, X).
+take_away(X) :- check(take_away, X).
+coffee(X) :- check(coffee, X).
+pescaterian(X) :- check(pescaterian, X).
+open(X) :- check(open, X).
+price_range(X) :- check(price_range, X).
 
 multivalued(neighborhood).
 multivalued(cuisine_type).
 multivalued(price_range).
 multivalued(open).
 
-% The code below implements the prompting to ask the user:
+% Care-checking implemented to allow the user to ignore attributes they don't care about:
 
+check(A, X) :- not(check_if_care(A, X)).
+check_if_care(A, X) :- care(A), not(ask(A, X)).
+care(A) :- atom_concat(care_check_, A, X), ask(X, '').
 
 % Asking clauses
-
-multivalued(none).
 
 ask(A, V):-
 known(y, A, V), % succeed if true
