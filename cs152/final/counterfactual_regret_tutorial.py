@@ -1,5 +1,6 @@
 import numpy as np
-from collections import defaultdict
+from collections import defaultdict, Counter
+from bitarray import bitarray
 
 PASS = 0
 BET = 1
@@ -49,11 +50,15 @@ class CounterfactualRegretNode:
                                       avg=np.array_str(self.get_average_strategy(), precision=3))
 
 
-def check_terminal_state(cards, history, plays, player, opponent):
+def kuhn_poker_check_terminal_state(chance_state, history):
+    plays = len(history)
+    player = plays % 2
+    opponent = 1 - player
+
     if plays <= 1:
         return False, None
 
-    player_wins = 1 if cards[player] > cards[opponent] else -1
+    player_wins = 1 if chance_state[player] > chance_state[opponent] else -1
 
     # double bet or double pass
     if history[-1] == history[-2]:
@@ -67,38 +72,37 @@ def check_terminal_state(cards, history, plays, player, opponent):
     return False, None
 
 
-def cfr(nodes, cards, history='', probabilities=None,
-        actions=KUHN_POKER_ACTIONS,
-        action_to_history=KUHN_POKER_ACTION_TO_HISTORY):
+def cfr(nodes, chance_state, history, probabilities=None, player=0,
+        info_set_generator=lambda chance, player, history: str(chance[player]) + history,
+        check_terminal_state=kuhn_poker_check_terminal_state,
+        node_action_generator=lambda x: KUHN_POKER_ACTIONS,
+        action_history_updater=lambda hist, act: hist + KUHN_POKER_ACTION_TO_HISTORY[act]):
     """
     The tutorial implementation of CFR, before I begin cleaning it up
     Assming this is always a two-player game.
     :param nodes: The mapping between information sets and their node representations
-    :param cards: The cards, where cards[0] is the card of player0, and cards[1] is card of player1
+    :param chance_state: The cards, where cards[0] is the card of player0, and cards[1] is card of player1
     :param history: The moves up until this point, as a string
     :param probabilities: The probabilities of arriving to this point for each player
-    :param actions: The actions that can be taken in this game
-        TODO: switch this to a node-based representation
-    :param action_to_history: The mapping from an action to its historical representation
-        TODO: represent better
+    :param player: the current player
+    :param info_set_generator: A function that generates the key determining the information set of a current state
+    :param check_terminal_state: A function that checks if a state is terminal, and returns the utility if it is
+    :param node_action_generator: A function mapping from the history of a node to the actions that can be taken
+    :param action_history_updater: A function that updates the history according to the action chosen
     :return: The utility of this node
     """
+    opponent = 1 - player
+
     if probabilities is None:
         probabilities = np.ones((2,))
 
-    plays = len(history)
-    player = plays % 2
-    opponent = 1 - player
-
-    terminal, utility = check_terminal_state(cards, history, plays, player, opponent)
+    terminal, utility = check_terminal_state(chance_state, history)
     if terminal:
         return utility
 
-    # we define the information set as the card this player was dealt
-    # as well as all visible moves
-    info_set = str(cards[player]) + history
+    info_set = info_set_generator(chance_state, player, history)
     if info_set not in nodes:
-        nodes[info_set] = CounterfactualRegretNode(actions, None, info_set)
+        nodes[info_set] = CounterfactualRegretNode(node_action_generator(history), None, info_set)
 
     node = nodes[info_set]
 
@@ -110,7 +114,9 @@ def cfr(nodes, cards, history='', probabilities=None,
         new_prob = np.copy(probabilities)
         new_prob[player] *= action_prob
 
-        action_utility = -1 * cfr(nodes, cards, history + action_to_history[action], new_prob)
+        action_utility = -1 * cfr(nodes, chance_state, action_history_updater(history, action), new_prob,
+                                  1 - player, info_set_generator, check_terminal_state,
+                                  node_action_generator, action_history_updater)
         utility.append(action_utility)
         node_utility += action_utility * action_prob
 
@@ -130,7 +136,7 @@ def cfr_trainer(num_iterations, num_prints=100):
 
     for t in range(num_iterations):
         np.random.shuffle(cards)
-        total_utility += cfr(nodes, cards)
+        total_utility += cfr(nodes, cards, '')
 
         if 0 == t % int(num_iterations / num_prints) and t > 0:
             print('After {t} iterations, average utility = {util:.3f}'.format(
@@ -139,6 +145,95 @@ def cfr_trainer(num_iterations, num_prints=100):
     for info_set in sorted(nodes):
         print(nodes[info_set])
 
-if __name__ == '__main__':
-    cfr_trainer(100000)
 
+# Dudo-related definitions
+
+DUDE_NUM_PLAYERS = 2
+DUDO_DICE_SIZE = 6
+DUDO_CLAIM_ACTIONS = DUDO_DICE_SIZE * DUDE_NUM_PLAYERS
+DUDO_NUM_ACTIONS = DUDO_CLAIM_ACTIONS + 1  # the 'dudo' action
+DUDO_ACTION_INDEX_TO_ACTION = {i: (i // DUDO_DICE_SIZE + 1,
+                                   (((i % DUDO_DICE_SIZE) + 1) % DUDO_DICE_SIZE) + 1)
+                               for i in range(DUDO_NUM_ACTIONS - 1)}
+
+
+# borrowed from http://christophe-simonis-at-tiny.blogspot.kr/2008/08/python-reverse-enumerate.html
+def reverse_enumerate(l):
+    return zip(range(len(l)-1, -1, -1), reversed(l))
+
+
+def dudo_terminal_state(chance_state, history):
+    if not history[-1]:
+        return False, None
+
+    # omit the last item of history to ignore the 'dudo' action
+    for index, value in reverse_enumerate(history[:-1]):
+        if value:
+            break
+
+    number, rank = DUDO_ACTION_INDEX_TO_ACTION[index]
+    counter = Counter(chance_state)
+    relevant_die = counter[1]
+
+    # 1's are wild and always count, so if the rank isn't 1 we also count occurrences of the result
+    if 1 != rank:
+        relevant_die += counter[rank]
+
+    return True, 1 if relevant_die >= number else -1
+
+
+def dudo_info_set_generator(chance_state, player, history):
+    return ((2 ** DUDO_NUM_ACTIONS) * chance_state[player]) + int(history.to01(), 2)
+
+
+def dudo_node_action_generator(history):
+    # if no bets have been made, you cannot claim 'dudo'
+    if not history.any():
+        return range(DUDO_CLAIM_ACTIONS)
+
+    # from the first unclaimed bet to 'dudo'
+    for index, value in reverse_enumerate(history[:-1]):
+        if value:
+            break
+
+    return range(index + 1, DUDO_NUM_ACTIONS)
+
+
+def dudo_action_history_updater(history, action):
+    new_history = history.copy()
+    new_history[action] = True
+    return new_history
+
+
+def dudo_info_set_to_str(info_set):
+    dice_mod = 2 ** DUDO_NUM_ACTIONS
+    d = info_set // dice_mod
+    h = bin(info_set - (dice_mod * d))[2:]
+    return '{d}, {h}'.format(d=d, h=h.rjust(DUDO_NUM_ACTIONS, '0'))
+
+
+def dudo_cfr_trainer(num_iterations, num_prints=100):
+    nodes = {}
+    die = np.asarray(range(1, DUDO_DICE_SIZE + 1))
+    total_utility = 0
+
+    for t in range(num_iterations):
+        die_rolls = np.random.choice(die, 2, True)
+        history = bitarray([0] * DUDO_NUM_ACTIONS)
+        total_utility += cfr(nodes, die_rolls, history,
+                             check_terminal_state=dudo_terminal_state,
+                             info_set_generator=dudo_info_set_generator,
+                             node_action_generator=dudo_node_action_generator,
+                             action_history_updater=dudo_action_history_updater)
+
+        if 0 == t % int(num_iterations / num_prints):
+            print('After {t} iterations, average utility = {util:.3f}'.format(
+                t=t, util=total_utility / (t + 1)))
+
+    for info_set in sorted(nodes):
+        print(dudo_info_set_to_str(info_set), nodes[info_set].get_average_strategy())
+
+
+if __name__ == '__main__':
+    # cfr_trainer(100000)
+    dudo_cfr_trainer(1000, 100)
