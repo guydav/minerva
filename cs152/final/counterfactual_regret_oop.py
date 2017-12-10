@@ -213,7 +213,7 @@ class PlayableCounterfactualRegretTrainer(CounterfactualRegretTrainer):
     """
     def play(self, num_rounds=0):
         """
-        The external interface to play against this trainr
+        The external interface to play against this trainer
         :param num_rounds: How many rounds to continue playing for, 0 to play for a long time
         :return: The overall utility for the player of all games played
         """
@@ -238,10 +238,10 @@ class PlayableCounterfactualRegretTrainer(CounterfactualRegretTrainer):
 
     def _play(self, chance_state, human_player):
         """
-        TODO: document
-        :param chance_state:
-        :param human_player:
-        :return:
+        Run a round of the game playing against a human player
+        :param chance_state: The chance state randomized for this game
+        :param human_player: The ordinal of the human player
+        :return: The utility for the human player from this round of self-play
         """
         history = self._initial_history_generator()
         player = 0
@@ -523,14 +523,14 @@ def main():
     # dudo_trainer = DudoTwoPlayerSingleDieCFRTrainer()
     # dudo_trainer.train(10000, should_print_result=True)
 
-    # trainer = KuhnPokerCFRTrainer()
-    # trainer.train(10000, should_print_result=True)
-    # save_trainer(trainer, 'trainer.pickle')
+    trainer = KuhnPokerCFRTrainer()
+    trainer.train(100000, should_print_result=True)
+    save_trainer(trainer, 'kuhn_trainer.pickle')
 
-    loaded_trainer = load_trainer('trainer.pickle')
+    # loaded_trainer = load_trainer('kuhn_trainer.pickle')
     # loaded_trainer.print()
 
-    loaded_trainer.play(10)
+    # loaded_trainer.play(10)
 
 
 if __name__ == '__main__':
