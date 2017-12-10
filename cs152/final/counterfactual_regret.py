@@ -108,6 +108,7 @@ class CounterfactualRegretTrainer:
         if probabilities is None:
             probabilities = np.ones((2,))
 
+        history = self._inject_chance_into_history(history)
         utility = self._check_terminal_state(chance_state, history)
         if utility is not None:
             return utility
@@ -154,6 +155,18 @@ class CounterfactualRegretTrainer:
         :return: the initial history in a format the rest of the game assumes
         """
         raise NotImplementedError()
+
+    def _inject_chance_into_history(self, history):
+        """
+        Allow the occurence of chance nodes to modify the history, even though we treat
+        all chance as pre-sampled under the chance-sampling MC formulation.
+
+        The default implementation simply returns the current history.
+
+        :param history: The current history
+        :return: The history, as modified if a chance event 'took' place here.
+        """
+        return history
 
     def _check_terminal_state(self, chance_state, history):
         """
@@ -248,7 +261,8 @@ class PlayableCounterfactualRegretTrainer(CounterfactualRegretTrainer):
         print(self._chance_state_to_human(chance_state, human_player))
 
         while utility is None:  # while True equivalent
-            human_history = self._history_to_human(history, human_player)
+            history = self._inject_chance_into_history(history)
+            human_history = self._history_to_human(chance_state, history, human_player)
             if len(human_history) > 0:
                 print('Game history: ' + human_history)
 
@@ -296,7 +310,7 @@ class PlayableCounterfactualRegretTrainer(CounterfactualRegretTrainer):
         """
         raise NotImplementedError()
 
-    def _history_to_human(self, history, human_player):
+    def _history_to_human(self, chance_state, history, human_player):
         """
         Communicate the history to a human player
         :param history: The internal representation of the history

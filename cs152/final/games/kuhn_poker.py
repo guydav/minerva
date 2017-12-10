@@ -62,7 +62,7 @@ class KuhnPokerCFRTrainer(PlayableCounterfactualRegretTrainer):
         card = chance_state[human_player]
         return 'You were dealt a {card}'.format(card=KUHN_POKER_CARDS[card])
 
-    def _history_to_human(self, history, human_player):
+    def _history_to_human(self, chance_state, history, human_player):
         human_history = ['{act} ({player})'.format(act=KUHN_POKER_HISTORY_TO_HUMAN[action],
                                                    player='you' if index % 2 == human_player else 'AI')
                          for index, action in enumerate(history)]
