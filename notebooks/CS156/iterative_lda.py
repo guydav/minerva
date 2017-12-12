@@ -5,7 +5,7 @@ from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 class IterativeLDA:
     def __init__(self, n_components=1, verbose=False):
         self.n_components = n_components
-        self.verbose=False
+        self.verbose=verbose
         
         self.ldas_ = []
         self.nullspaces_ = []
@@ -36,8 +36,10 @@ class IterativeLDA:
             transformed.append(transformed_X)
             self.ldas_.append(lda)
             
+            if self.verbose: print('Computing nullspace')
             ns = self._ns_using_svd(lda.coef_)
             self.nullspaces_.append(ns)
+            if self.verbose: print('Projecting onto nullspace')
             current_X = current_X.dot(ns)
         
         return transformed
@@ -59,6 +61,7 @@ class IterativeLDA:
         for lda, ns in zip(self.ldas_, self.nullspaces_):
             if self.verbose: print('Starting transform')
             transformed.append(lda.transform(current_X))
+            if self.verbose: print('Computing nullspace')
             current_X = current_X.dot(ns)
             
         return np.hstack(transformed)    
