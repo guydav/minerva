@@ -1,4 +1,5 @@
 import numpy as np
+import scipy
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 
 
@@ -10,10 +11,14 @@ class IterativeLDA:
         self.ldas_ = []
         self.nullspaces_ = []
         
-    def _ns_using_svd(self, A, eps=1e-15):
+    def _ns_using_svd(self, A):
         u, s, v = np.linalg.svd(A)
         null_space = v[s.shape[0]:]
         return null_space.T
+    
+    def _ns_using_qr(self, A):
+        q, r = scipy.linalg.qr(A.T)
+        return q[:,1:]
     
     def _do_fit(self, X, y, n=None, new=True):
         if X.shape[0] != y.shape[0]:
@@ -37,7 +42,8 @@ class IterativeLDA:
             self.ldas_.append(lda)
             
             if self.verbose: print('Computing nullspace')
-            ns = self._ns_using_svd(lda.coef_)
+            ns = self._ns_using_qr(lda.coef_)
+            if self.verbose: print('Nullspace computed')
             self.nullspaces_.append(ns)
             if self.verbose: print('Projecting onto nullspace')
             current_X = current_X.dot(ns)
