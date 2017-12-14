@@ -4,7 +4,7 @@ from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 
 
 class IterativeLDA:
-    def __init__(self, n_components=1, use_coef=True, nullspace_solver='qr', lda_solver='svd', verbose=False):
+    def __init__(self, n_components=1, use_coef=True, nullspace_solver='svd', lda_solver='svd', verbose=False):
         self.n_components = n_components
         self.use_coef = use_coef  
         self.nullspace_solver = nullspace_solver
@@ -15,22 +15,22 @@ class IterativeLDA:
         self.nullspaces_ = []
         
     def _nullspace(self, A):
-        if self.nullspace_solver == 'qr':
-            return self._ns_using_qr(A)
-        
         if self.nullspace_solver == 'svd':
             return self._ns_using_svd(A)
         
-        raise ValueError("Nullspace solver method {ns} not supported. Use 'qr' or 'svd'.".format(ns=self.nullspace_solver))
+        if self.nullspace_solver == 'qr':
+            return self._ns_using_qr(A)
         
-    def _ns_using_qr(self, A):
-        q, r = scipy.linalg.qr(A.T)
-        return q[:,1:]
+        raise ValueError("Nullspace solver method {ns} not supported. Use 'qr' or 'svd'.".format(ns=self.nullspace_solver))
     
     def _ns_using_svd(self, A):
         u, s, v = np.linalg.svd(A)
         null_space = v[s.shape[0]:]
         return null_space.T
+    
+    def _ns_using_qr(self, A):
+        q, r = scipy.linalg.qr(A.T)
+        return q[:,1:]
     
     def _do_fit(self, X, y, n=None, new=True):
         if X.shape[0] != y.shape[0]:
@@ -88,7 +88,10 @@ class IterativeLDA:
             if self.verbose: print('Starting transform')
             transformed.append(lda.transform(current_X))
             if self.verbose: print('Computing nullspace')
-            current_X = current_X.dot(ns)
+            if self.use_coef: 
+                current_X = current_X.dot(ns)
+            else:
+                current_X = (current_X - lda.xbar_).dot(ns)
             
         return np.hstack(transformed)    
     
