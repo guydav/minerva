@@ -58,11 +58,14 @@ class CounterfactualRegretTrainer:
 
     The implementation currently only supports two-player games.
 
+    Added support of CFR+, a variant which does not allow regrets to dip into negative values.
+
     TODO: consider implementing a chance-node supporting implementation
     """
-    def __init__(self):
+    def __init__(self, cfr_plus=False):
         self.nodes = {}
         self.total_utility = 0
+        self.cfr_plus = cfr_plus
 
     def train(self, num_iterations, num_prints=None, should_print_result=False):
         """
@@ -108,7 +111,7 @@ class CounterfactualRegretTrainer:
         if probabilities is None:
             probabilities = np.ones((2,))
 
-        history = self._inject_chance_into_history(history)
+        history = self._inject_chance_into_history(history, chance_state)
         utility = self._check_terminal_state(chance_state, history)
         if utility is not None:
             return utility
@@ -138,6 +141,8 @@ class CounterfactualRegretTrainer:
 
         # compute counterfactual regret, weighted by probability of opponent arriving here
         node.regret_sums += (utility - node_utility) * probabilities[opponent]
+        if self.cfr_plus:
+            node.regret_sums = np.where(node.regret_sums > 0, node.regret_sums, 0)
 
         # return the node utility to propagate up the tree
         return node_utility
@@ -156,9 +161,9 @@ class CounterfactualRegretTrainer:
         """
         raise NotImplementedError()
 
-    def _inject_chance_into_history(self, history):
+    def _inject_chance_into_history(self, history, chance_state):
         """
-        Allow the occurence of chance nodes to modify the history, even though we treat
+        Allow the occurrence of chance nodes to modify the history, even though we treat
         all chance as pre-sampled under the chance-sampling MC formulation.
 
         The default implementation simply returns the current history.
@@ -261,7 +266,7 @@ class PlayableCounterfactualRegretTrainer(CounterfactualRegretTrainer):
         print(self._chance_state_to_human(chance_state, human_player))
 
         while utility is None:  # while True equivalent
-            history = self._inject_chance_into_history(history)
+            history = self._inject_chance_into_history(history, chance_state)
             human_history = self._history_to_human(chance_state, history, human_player)
             if len(human_history) > 0:
                 print('Game history: ' + human_history)

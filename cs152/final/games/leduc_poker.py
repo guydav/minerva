@@ -6,36 +6,37 @@ from cs152.final.util.bidict import bidict
 # Kuhn poker related definitions
 PASS = 0
 BET = 1
-AD_POKER_ACTIONS = (PASS, BET)
+LEDUC_POKER_ACTIONS = (PASS, BET)
 PASS_HISTORY = 'p'
 BET_HISTORY = 'b'
 DEAL_HISTORY = '|'
-AD_POKER_ACTION_TO_HISTORY = bidict({PASS: PASS_HISTORY, BET: BET_HISTORY})
-AD_POKER_HISTORY_TO_HUMAN = bidict({PASS_HISTORY: 'pass', BET_HISTORY: 'bet', DEAL_HISTORY: 'dealt'})
-AD_POKER_CARDS = bidict({0: '2', 1: 'A'})
-AD_POKER_NUM_ROUNDS = 2
+LEDUC_POKER_ACTION_TO_HISTORY = bidict({PASS: PASS_HISTORY, BET: BET_HISTORY})
+LEDUC_POKER_HISTORY_TO_HUMAN = bidict({PASS_HISTORY: 'pass', BET_HISTORY: 'bet', DEAL_HISTORY: 'dealt'})
+LEDUC_POKER_CARDS = bidict({0: 'J', 1: 'Q', 2: 'K'})
+LEDUC_POKER_NUM_ROUNDS = 2
 
 
-class AceDeucePokerCFRTrainer(PlayableCounterfactualRegretTrainer):
+class LeducDeucePokerCFRTrainer(PlayableCounterfactualRegretTrainer):
     def __init__(self, cfr_plus):
         super().__init__(cfr_plus)
-        self.cards = np.asarray(range(len(AD_POKER_CARDS)))
+        self.cards = np.asarray(list(range(len(LEDUC_POKER_CARDS))) * 2)
 
     def _chance_sampler(self, iteration=None):
-        return np.random.choice(self.cards, (NUM_PLAYERS, AD_POKER_NUM_ROUNDS), True)
+        return np.random.choice(self.cards, NUM_PLAYERS + 1, False)
 
     def _inject_chance_into_history(self, history, chance_state):
         if '' == history:
             return DEAL_HISTORY
 
-        if 2 == history.count(DEAL_HISTORY):
+        if 1 < history.count(DEAL_HISTORY):
             return history
 
         round_status = self._round_over(None, history)
         if round_status is None or round_status != 0:
             return history
 
-        return history + DEAL_HISTORY
+        # the face-up card is dealt
+        return history + str(chance_state[-1]) + DEAL_HISTORY
 
     def _round_over(self, chance_state, history):
         # TODO: consider caching this function
@@ -63,14 +64,8 @@ class AceDeucePokerCFRTrainer(PlayableCounterfactualRegretTrainer):
         if chance_state is None:
             return 0
 
-        player_pair = chance_state[player][0] == chance_state[player][1]
-        opponent_pair = chance_state[opponent][0] == chance_state[opponent][1]
-
-        # Return 1 if player has a higher pair, -1 if opponent has a higher pair, 0 if tied
-        if player_pair and opponent_pair:
-            p = chance_state[player][0]
-            o = chance_state[opponent][0]
-            return (p > o) - (p < o)
+        player_pair = chance_state[player] == chance_state[-1]
+        opponent_pair = chance_state[opponent] == chance_state[-1]
 
         if player_pair:
             return 1
@@ -78,8 +73,10 @@ class AceDeucePokerCFRTrainer(PlayableCounterfactualRegretTrainer):
         if opponent_pair:
             return -1
 
-        # both have an A-2
-        return 0
+        # compare their individual cards
+        p = chance_state[player]
+        o = chance_state[opponent]
+        return (p > o) - (p < o)
 
     def _check_terminal_state(self, chance_state, history):
         if history.endswith('|'):
@@ -88,16 +85,16 @@ class AceDeucePokerCFRTrainer(PlayableCounterfactualRegretTrainer):
         return self._round_over(chance_state, history)
 
     def _information_set_generator(self, chance_state, history, player):
-        return str(chance_state[player][:history.count(DEAL_HISTORY)]) + history
+        return str(chance_state[player]) + history
 
     def _node_action_generator(self, chance_state, history, player):
-        return AD_POKER_ACTIONS
+        return LEDUC_POKER_ACTIONS
 
     def _initial_history_generator(self):
         return ''
 
     def _action_history_updater(self, history, action):
-        return history + AD_POKER_ACTION_TO_HISTORY[action]
+        return history + LEDUC_POKER_ACTION_TO_HISTORY[action]
 
     # PlayableCFR related definitions
 
@@ -108,43 +105,53 @@ class AceDeucePokerCFRTrainer(PlayableCounterfactualRegretTrainer):
     def _history_to_human(self, chance_state, history, human_player):
         human_history = []
         card_index = 0
+        human_cards = (chance_state[human_player], chance_state[-1])
+        player_moves = 0
 
         for index, action in enumerate(history):
+            if action not in LEDUC_POKER_HISTORY_TO_HUMAN:
+                continue
+
             if action == DEAL_HISTORY:
-                info = AD_POKER_CARDS[chance_state[human_player][card_index]]
+                if card_index >= len(human_cards):
+                    continue
+
+                info = LEDUC_POKER_CARDS[human_cards[card_index]]
                 card_index += 1
 
             else:
-                info = 'you' if index % 2 == ((human_player + history.count(DEAL_HISTORY)) % 2) else 'AI'
+                info = 'you' if player_moves % 2 == (human_player % 2) else 'AI'
+                player_moves += 1
 
-            human_history.append('{act} ({info})'.format(act=AD_POKER_HISTORY_TO_HUMAN[action], info=info))
+            human_history.append('{act} ({info})'.format(act=LEDUC_POKER_HISTORY_TO_HUMAN[action], info=info))
 
         out = ', '.join(human_history)
         return out[0].upper() + out[1:]
 
     def _game_over_to_human(self, chance_state, history, human_player, human_utility):
-        return 'The AI was dealt a {ai_cards} to your {cards}, and you {profit} {count} chip{s}'.format(
-            ai_cards=''.join([AD_POKER_CARDS[c] for c in chance_state[1 - human_player]]),
-            cards=''.join([AD_POKER_CARDS[c] for c in chance_state[human_player]]),
+        return 'The AI was dealt a {ai_card} to your {card}, with {face} communal, and you {profit} {count} chip{s}'.format(
+            ai_card=LEDUC_POKER_CARDS[chance_state[1 - human_player]],
+            card=LEDUC_POKER_CARDS[chance_state[human_player]],
+            face=LEDUC_POKER_CARDS[chance_state[-1]],
             profit='gain' if human_utility > 0 else 'lose',
             count=abs(human_utility),
             s='' if abs(human_utility) == 1 else 's'
         )
 
     def _actions_to_human(self, actions):
-        human_actions = ['{act} ({code})'.format(act=AD_POKER_HISTORY_TO_HUMAN[action_code],
+        human_actions = ['{act} ({code})'.format(act=LEDUC_POKER_HISTORY_TO_HUMAN[action_code],
                                                  code=action_code)
-                         for action_code in [AD_POKER_ACTION_TO_HISTORY[action] for action in actions]]
+                         for action_code in [LEDUC_POKER_ACTION_TO_HISTORY[action] for action in actions]]
         return ', '.join(human_actions)
 
     def _validate_human_action_to_action(self, actions, human_action):
         human_action = human_action.lower()
 
-        if human_action in AD_POKER_HISTORY_TO_HUMAN.inverse:
-            human_action = AD_POKER_HISTORY_TO_HUMAN.inverse[human_action][0]
+        if human_action in LEDUC_POKER_HISTORY_TO_HUMAN.inverse:
+            human_action = LEDUC_POKER_HISTORY_TO_HUMAN.inverse[human_action][0]
 
-        if human_action in AD_POKER_HISTORY_TO_HUMAN:
-            action = AD_POKER_ACTION_TO_HISTORY.inverse[human_action][0]
+        if human_action in LEDUC_POKER_HISTORY_TO_HUMAN:
+            action = LEDUC_POKER_ACTION_TO_HISTORY.inverse[human_action][0]
             return action if action in actions else None
 
         # Support blank entry when there's no choice
@@ -153,12 +160,13 @@ class AceDeucePokerCFRTrainer(PlayableCounterfactualRegretTrainer):
 
     def _ai_action_to_human(self, action):
         return 'The AI chose to {action}'.format(
-            action=AD_POKER_HISTORY_TO_HUMAN[AD_POKER_ACTION_TO_HISTORY[action]])
+            action=LEDUC_POKER_HISTORY_TO_HUMAN[LEDUC_POKER_ACTION_TO_HISTORY[action]])
 
 
 def main():
-    trainer = AceDeucePokerCFRTrainer(cfr_plus=True)
-    trainer.train(100000, should_print_result=True)
+    trainer = LeducDeucePokerCFRTrainer(cfr_plus=True)
+    trainer.train(10000, should_print_result=True)
+    trainer.play(10)
     # save_trainer(trainer, 'ad_trainer.pickle')
 
     # loaded_trainer = load_trainer('ad_trainer.pickle')
