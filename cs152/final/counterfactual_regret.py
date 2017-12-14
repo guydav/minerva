@@ -13,7 +13,7 @@ class CounterfactualRegretNode:
         self.strategy_sums = np.zeros((self.num_actions,), dtype=np.float64)
 
     def get_strategy(self, realization_weight):
-        strategy = np.where(self.regret_sums > 0, self.regret_sums, 0)
+        strategy = np.max(self.regret_sums, 0)
         normalization = np.sum(strategy)
 
         if normalization > 0:
