@@ -17,7 +17,7 @@ AD_POKER_NUM_ROUNDS = 2
 
 
 class AceDeucePokerCFRTrainer(PlayableCounterfactualRegretTrainer):
-    def __init__(self, cfr_plus):
+    def __init__(self, cfr_plus=False):
         super().__init__(cfr_plus)
         self.cards = np.asarray(range(len(AD_POKER_CARDS)))
 

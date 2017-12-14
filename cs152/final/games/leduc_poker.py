@@ -16,8 +16,8 @@ LEDUC_POKER_CARDS = bidict({0: 'J', 1: 'Q', 2: 'K'})
 LEDUC_POKER_NUM_ROUNDS = 2
 
 
-class LeducDeucePokerCFRTrainer(PlayableCounterfactualRegretTrainer):
-    def __init__(self, cfr_plus):
+class LeducPokerCFRTrainer(PlayableCounterfactualRegretTrainer):
+    def __init__(self, cfr_plus=False):
         super().__init__(cfr_plus)
         self.cards = np.asarray(list(range(len(LEDUC_POKER_CARDS))) * 2)
 
@@ -164,10 +164,9 @@ class LeducDeucePokerCFRTrainer(PlayableCounterfactualRegretTrainer):
 
 
 def main():
-    trainer = LeducDeucePokerCFRTrainer(cfr_plus=True)
+    trainer = LeducPokerCFRTrainer(cfr_plus=True)
     trainer.train(10000, should_print_result=True)
-    trainer.play(10)
-    # save_trainer(trainer, 'ad_trainer.pickle')
+    save_trainer(trainer, 'leduc_trainer.pickle')
 
     # loaded_trainer = load_trainer('ad_trainer.pickle')
     # loaded_trainer.play(10)

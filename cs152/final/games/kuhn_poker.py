@@ -15,7 +15,7 @@ KUHN_POKER_CARDS = bidict({0: 'J', 1: 'Q', 2: 'K'})
 
 
 class KuhnPokerCFRTrainer(PlayableCounterfactualRegretTrainer):
-    def __init__(self, cfr_plus):
+    def __init__(self, cfr_plus=False):
         super().__init__(cfr_plus)
         self.cards = np.asarray(range(3))
 

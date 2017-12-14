@@ -66,6 +66,7 @@ class CounterfactualRegretTrainer:
         self.nodes = {}
         self.total_utility = 0
         self.cfr_plus = cfr_plus
+        self.utility_history = []
 
     def train(self, num_iterations, num_prints=None, should_print_result=False):
         """
@@ -76,13 +77,17 @@ class CounterfactualRegretTrainer:
         :param should_print_result: Should the final average strategy be printed
         :return: None
         """
+        num_iterations = int(num_iterations)
+
         if num_prints is None:
             num_prints = min(num_iterations // 100, 100)
 
         for t in range(num_iterations):
             chance_state = self._chance_sampler(t)
             initial_history = self._initial_history_generator()
-            self.total_utility += self._train(chance_state, initial_history)
+            utility = self._train(chance_state, initial_history)
+            self.utility_history.append(utility)
+            self.total_utility += utility
 
             if 0 == t % int(num_iterations / num_prints):
                 print('After {t} iterations, average utility = {util:.3f}'.format(
