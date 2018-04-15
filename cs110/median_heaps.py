@@ -66,13 +66,13 @@ class MedianHeap(object):
             return self._pop_lower_half()
 
         elif upper_half_len > lower_half_len:
-            for _ in xrange((upper_half_len - lower_half_len) / 2):
+            for _ in range((upper_half_len - lower_half_len) / 2):
                 self._push_lower_half(self._pop_upper_half())
 
             return self._pop_upper_half()
 
         else:
-            for _ in xrange((lower_half_len - upper_half_len) / 2):
+            for _ in range((lower_half_len - upper_half_len) / 2):
                 self._push_upper_half(self._pop_lower_half())
 
             return self._pop_lower_half()
